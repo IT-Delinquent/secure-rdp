@@ -1,6 +1,7 @@
 #include "CredentialDialog.h"
 
 #include "CredentialVault.h"
+#include "ModalLoop.h"
 #include "Resource.h"
 #include "UiTheme.h"
 #include "Util.h"
@@ -22,17 +23,67 @@ struct CredEditState {
     HWND editPass = nullptr;
 };
 
+void LayoutCredEdit(HWND hwnd, const CredEditState* st) {
+    RECT rc{};
+    GetClientRect(hwnd, &rc);
+    if (rc.bottom < 120) {
+        return;
+    }
+    const int m = 16;
+    const int labelH = 18;
+    const int editH = 26;
+    const int btnH = 32;
+    const int btnW = 96;
+    int y = m;
+
+    auto placeLabel = [&](int id) {
+        if (HWND w = GetDlgItem(hwnd, id)) {
+            SetWindowPos(w, nullptr, m, y, 160, labelH, SWP_NOZORDER);
+        }
+        y += labelH + 4;
+    };
+    auto placeEdit = [&](HWND edit) {
+        if (edit) {
+            SetWindowPos(edit, nullptr, m, y, rc.right - 2 * m, editH, SWP_NOZORDER);
+        }
+        y += editH + 10;
+    };
+
+    placeLabel(1001);
+    placeEdit(st ? st->editLabel : nullptr);
+    placeLabel(1002);
+    placeEdit(st ? st->editUser : nullptr);
+    placeLabel(1003);
+    placeEdit(st ? st->editDomain : nullptr);
+    placeLabel(1004);
+    placeEdit(st ? st->editPass : nullptr);
+
+    const int btnY = rc.bottom - m - btnH;
+    if (HWND cancel = GetDlgItem(hwnd, IDCANCEL)) {
+        SetWindowPos(cancel, nullptr, rc.right - m - btnW, btnY, btnW, btnH, SWP_NOZORDER);
+    }
+    if (HWND ok = GetDlgItem(hwnd, IDOK)) {
+        SetWindowPos(ok, nullptr, rc.right - m - btnW * 2 - 12, btnY, btnW, btnH, SWP_NOZORDER);
+    }
+}
+
 LRESULT CALLBACK CredEditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    LRESULT themeResult = 0;
+    if (UiTheme::HandleDialogMessages(hwnd, msg, wParam, lParam, themeResult)) {
+        return themeResult;
+    }
+
     auto* st = reinterpret_cast<CredEditState*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
     switch (msg) {
         case WM_CREATE: {
             st = static_cast<CredEditState*>(reinterpret_cast<CREATESTRUCTW*>(lParam)->lpCreateParams);
             SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(st));
-            const int m = 12;
+            const int m = 16;
             int y = m;
-            auto label = [&](const wchar_t* t) {
-                CreateWindowExW(0, L"STATIC", t, WS_CHILD | WS_VISIBLE, m, y, 120, 18, hwnd, nullptr, nullptr, nullptr);
-                y += 20;
+            auto label = [&](const wchar_t* t, int id) {
+                CreateWindowExW(0, L"STATIC", t, WS_CHILD | WS_VISIBLE, m, y, 120, 18, hwnd,
+                                reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)), nullptr, nullptr);
+                y += 22;
             };
             auto edit = [&](const wchar_t* text, int id, bool password) {
                 DWORD style = WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL;
@@ -41,28 +92,33 @@ LRESULT CALLBACK CredEditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 }
                 HWND e = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", text, style, m, y, 300, 24, hwnd,
                                          reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)), nullptr, nullptr);
-                y += 32;
+                y += 34;
                 return e;
             };
-            label(L"Label:");
+            label(L"Label:", 1001);
             st->editLabel = edit(st->meta.label.c_str(), IDC_CRED_LABEL, false);
-            label(L"Username:");
+            label(L"Username:", 1002);
             st->editUser = edit(st->meta.username.c_str(), IDC_CRED_USER, false);
-            label(L"Domain (optional):");
+            label(L"Domain (optional):", 1003);
             st->editDomain = edit(st->meta.domain.c_str(), IDC_CRED_DOMAIN, false);
-            label(L"Password:");
+            label(L"Password:", 1004);
             st->editPass = edit(L"", IDC_CRED_PASS, true);
             SendMessageW(st->editPass, EM_SETPASSWORDCHAR, L'●', 0);
             if (!st->password.empty()) {
                 SetWindowTextW(st->editPass, st->password.c_str());
             }
-            CreateWindowExW(0, L"BUTTON", L"OK", WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON, m, y + 8, 80, 28, hwnd,
+            CreateWindowExW(0, L"BUTTON", L"OK", WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON, 0, 0, 10, 10, hwnd,
                             reinterpret_cast<HMENU>(IDOK), nullptr, nullptr);
-            CreateWindowExW(0, L"BUTTON", L"Cancel", WS_CHILD | WS_VISIBLE, m + 90, y + 8, 80, 28, hwnd,
+            CreateWindowExW(0, L"BUTTON", L"Cancel", WS_CHILD | WS_VISIBLE, 0, 0, 10, 10, hwnd,
                             reinterpret_cast<HMENU>(IDCANCEL), nullptr, nullptr);
-            UiTheme::Apply(hwnd);
+            UiTheme::ApplyDialog(hwnd);
+            LayoutCredEdit(hwnd, st);
+            SetFocus(st->editLabel);
             return 0;
         }
+        case WM_SIZE:
+            LayoutCredEdit(hwnd, st);
+            return 0;
         case WM_COMMAND:
             if (!st) {
                 break;
@@ -86,11 +142,15 @@ LRESULT CALLBACK CredEditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 return 0;
             }
             if (LOWORD(wParam) == IDCANCEL) {
+                st->accepted = false;
                 DestroyWindow(hwnd);
                 return 0;
             }
             break;
         case WM_CLOSE:
+            if (st) {
+                st->accepted = false;
+            }
             DestroyWindow(hwnd);
             return 0;
     }
@@ -105,32 +165,26 @@ bool ShowCredEditDialog(HWND owner, CredEditState& state) {
         wc.lpfnWndProc = CredEditProc;
         wc.hInstance = GetModuleHandleW(nullptr);
         wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
-        wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
+        wc.hbrBackground = UiTheme::DialogBackgroundBrush();
         wc.lpszClassName = L"SecureRdpCredEditDlg";
         RegisterClassExW(&wc);
         registered = true;
     }
 
-    RECT ownerRc{};
-    GetWindowRect(owner, &ownerRc);
-    const int w = 340;
-    const int h = 280;
-    const int x = ownerRc.left + (ownerRc.right - ownerRc.left - w) / 2;
-    const int y = ownerRc.top + (ownerRc.bottom - ownerRc.top - h) / 2;
-
-    HWND dlg = CreateWindowExW(WS_EX_DLGMODALFRAME, L"SecureRdpCredEditDlg",
-                               state.isNew ? L"Add Credential" : L"Edit Credential", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
-                               x, y, w, h, owner, nullptr, GetModuleHandleW(nullptr), &state);
+    HWND dlg = CreateWindowExW(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE, L"SecureRdpCredEditDlg",
+                               state.isNew ? L"Add Credential" : L"Edit Credential",
+                               WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, 0, 0, 100, 100, owner, nullptr,
+                               GetModuleHandleW(nullptr), &state);
     if (!dlg) {
         return false;
     }
+    CenterWindowOnOwner(dlg, owner, 380, 320);
+    SendMessageW(dlg, WM_SIZE, 0, MAKELPARAM(380, 320));
+    UiTheme::ApplyDialog(dlg);
     ShowWindow(dlg, SW_SHOW);
+    UpdateWindow(dlg);
     EnableWindow(owner, FALSE);
-    MSG msg{};
-    while (IsWindow(dlg) && GetMessageW(&msg, nullptr, 0, 0)) {
-        TranslateMessage(&msg);
-        DispatchMessageW(&msg);
-    }
+    RunModalLoop(dlg);
     EnableWindow(owner, TRUE);
     SetForegroundWindow(owner);
     return state.accepted;
@@ -164,6 +218,11 @@ void RefreshList(CredMgrState& st) {
 }
 
 INT_PTR CALLBACK CredMgrProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    LRESULT themeResult = 0;
+    if (UiTheme::HandleDialogMessages(hwnd, msg, wParam, lParam, themeResult)) {
+        return themeResult;
+    }
+
     auto* st = reinterpret_cast<CredMgrState*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
     switch (msg) {
         case WM_CREATE: {
@@ -182,7 +241,7 @@ INT_PTR CALLBACK CredMgrProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             CreateWindowExW(0, L"BUTTON", L"Close", WS_CHILD | WS_VISIBLE, 260, 220, 70, 28, hwnd,
                             reinterpret_cast<HMENU>(IDCANCEL), nullptr, nullptr);
             RefreshList(*st);
-            UiTheme::Apply(hwnd);
+            UiTheme::ApplyDialog(hwnd);
             return 0;
         }
         case WM_COMMAND:
@@ -265,7 +324,7 @@ bool ShowCredentialManager(HWND owner, ConnectionTreeModel& model) {
         wc.lpfnWndProc = CredMgrProc;
         wc.hInstance = GetModuleHandleW(nullptr);
         wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
-        wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
+        wc.hbrBackground = UiTheme::DialogBackgroundBrush();
         wc.lpszClassName = L"SecureRdpCredMgr";
         RegisterClassExW(&wc);
         registered = true;
@@ -287,6 +346,7 @@ bool ShowCredentialManager(HWND owner, ConnectionTreeModel& model) {
     if (!dlg) {
         return false;
     }
+    UiTheme::ApplyDialog(dlg);
     ShowWindow(dlg, SW_SHOW);
     EnableWindow(owner, FALSE);
     MSG msg{};

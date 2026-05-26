@@ -1,16 +1,20 @@
 #include <windows.h>
 #include <verrsrc.h>
+#include "../src/BuildVersion.h"
 
 // ID 1 = primary application icon (shown on SecureRdp.exe in Explorer).
 #define IDI_APPICON 1
+#define IDR_CHANGELOG 101
 
 IDI_APPICON ICON "app.ico"
+
+IDR_CHANGELOG RCDATA "changelog.txt"
 
 1 RT_MANIFEST "app.manifest"
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 1,0,0,0
-PRODUCTVERSION 1,0,0,0
+FILEVERSION SECURE_RDP_FILE_VERSION
+PRODUCTVERSION SECURE_RDP_FILE_VERSION
 FILEFLAGSMASK 0x3fL
 FILEFLAGS 0x0L
 FILEOS VOS_NT_WINDOWS32
@@ -23,11 +27,11 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "SecureRdp"
             VALUE "FileDescription", "Secure RDP Connection Manager"
-            VALUE "FileVersion", "1.0.0.0"
+            VALUE "FileVersion", SECURE_RDP_FILE_VERSION_STR
             VALUE "InternalName", "SecureRdp"
             VALUE "OriginalFilename", "SecureRdp.exe"
             VALUE "ProductName", "Secure RDP Connection Manager"
-            VALUE "ProductVersion", "1.0.0.0"
+            VALUE "ProductVersion", SECURE_RDP_FILE_VERSION_STR
         END
     END
     BLOCK "VarFileInfo"

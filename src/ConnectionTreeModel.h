@@ -58,6 +58,8 @@ public:
 
     void AssignNewIds(TreeNode& node);
 
+    static void CollectSessions(const TreeNode& folder, bool recursive, std::vector<TreeNode*>& out);
+
 private:
     TreeNode* FindNodeIn(TreeNode& parent, const std::wstring& id);
     const TreeNode* FindNodeIn(const TreeNode& parent, const std::wstring& id) const;

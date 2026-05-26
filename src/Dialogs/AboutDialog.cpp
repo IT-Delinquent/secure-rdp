@@ -70,6 +70,11 @@ State* GetState(HWND hwnd) {
 }
 
 INT_PTR CALLBACK DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    LRESULT themeResult = 0;
+    if (UiTheme::HandleDialogMessages(hwnd, msg, wParam, lParam, themeResult)) {
+        return themeResult;
+    }
+
     State* st = GetState(hwnd);
     switch (msg) {
         case WM_CREATE: {
@@ -87,7 +92,7 @@ INT_PTR CALLBACK DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 reinterpret_cast<HMENU>(static_cast<INT_PTR>(IDC_ABOUT_TEXT)), nullptr, nullptr);
             CreateWindowExW(0, L"BUTTON", L"OK", WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON, 0, 0, 10, 10, hwnd,
                             reinterpret_cast<HMENU>(static_cast<INT_PTR>(IDOK)), nullptr, nullptr);
-            UiTheme::Apply(hwnd);
+            UiTheme::ApplyDialog(hwnd);
             Layout(hwnd, st);
             return 0;
         }
@@ -123,7 +128,7 @@ void ShowAboutDialog(HWND owner) {
         wc.lpfnWndProc = DlgProc;
         wc.hInstance = GetModuleHandleW(nullptr);
         wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
-        wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
+        wc.hbrBackground = UiTheme::DialogBackgroundBrush();
         wc.lpszClassName = L"SecureRdpAboutDlg";
         RegisterClassExW(&wc);
         registered = true;
@@ -146,6 +151,8 @@ void ShowAboutDialog(HWND owner) {
     state.release();
 
     CenterWindowOnOwner(dlg, owner, 480, 380);
+    SendMessageW(dlg, WM_SIZE, 0, MAKELPARAM(480, 380));
+    UiTheme::ApplyDialog(dlg);
     ShowWindow(dlg, SW_SHOW);
     UpdateWindow(dlg);
     EnableWindow(owner, FALSE);

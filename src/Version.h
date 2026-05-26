@@ -1,4 +1,8 @@
 #pragma once
 
-#define SECURE_RDP_VERSION L"v1.0.0"
-#define SECURE_RDP_TITLE L"Secure RDP Manager " SECURE_RDP_VERSION
+#define SECURE_RDP_VERSION_BASE L"v1.0.1"
+
+#include "BuildVersion.h"
+
+#define SECURE_RDP_VERSION SECURE_RDP_VERSION_BASE L"." SECURE_RDP_BUILD_REV_W
+#define SECURE_RDP_TITLE L"Secure RDP Manager"

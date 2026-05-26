@@ -1,4 +1,4 @@
-# Secure RDP Connection Manager v1.0.0
+# Secure RDP Connection Manager v1.0.1
 
 A small native Windows desktop application for organizing Remote Desktop sessions in a folder tree. Passwords are stored in **Windows Credential Manager** (DPAPI-backed); connection data on disk never contains secrets.
 
@@ -24,11 +24,14 @@ No third-party UI framework, package manager, or runtime beyond the Windows SDK 
 
 - Tree view with folders and RDP sessions (name, host/IP, port default 3389)
 - Reusable credential profiles linked to sessions
+- Bulk credential assignment for multi-selected sessions and folder scopes
 - Launch sessions in **fullscreen** via `mstsc.exe` (separate process)
 - Drag-and-drop reparenting, copy/paste, duplicate
 - Import and export connections in **mRemoteNG XML** format (folders and RDP sessions)
 - Inline rename (F2 / slow double-click on label)
-- Toolbar, menus, and context menu
+- Built-in changelog dialog (**File -> Changelog...**)
+- Theme selection (**File -> Theme -> System/Light/Dark**)
+- Menus and context menu
 
 ## Security model
 
@@ -65,7 +68,7 @@ To refresh the branding icon after changing `resources/app-source-no-background.
 
 ```powershell
 python resources/build_icon.py
-cmake --build build --config Release --clean-first
+cmake --build build --config Release
 ```
 
 `build_icon.py` centers the visible artwork with uniform padding before resizing, so the title-bar icon is not clipped on one side.
@@ -78,8 +81,11 @@ If Explorer still shows a blank/generic icon after rebuilding, clear the Windows
 2. Use **File → Manage Credentials** to add username/domain/password profiles.
 3. Create folders and sessions; link a credential in the session editor.
 4. Double-click a session or press **Connect** / Enter to launch fullscreen RDP.
-5. Drag items to reorganize; **Ctrl+C** / **Ctrl+V** to copy/paste subtrees; **Duplicate** from the Edit menu.
-6. Use **File → Import** / **Export** for mRemoteNG-compatible XML (`.xml`). Import merges into the selected folder (or the root). Non-RDP protocols are skipped on import; passwords from mRemoteNG files are not imported (they are encrypted in that format)—set passwords in **Manage Credentials** after import.
+5. For bulk updates, multi-select sessions (Ctrl+click) and use **Set Credential...**.
+6. Use folder context **Set Credential...** for direct children or the full subtree.
+7. Drag items to reorganize; **Ctrl+C** / **Ctrl+V** to copy/paste subtrees; **Duplicate** from the Edit menu.
+8. Use **File -> Changelog...** for in-app release notes and **File -> Theme** to switch appearance.
+9. Use **File -> Import** / **Export** for mRemoteNG-compatible XML (`.xml`). Import merges into the selected folder (or the root). Non-RDP protocols are skipped on import; passwords from mRemoteNG files are not imported (they are encrypted in that format)—set passwords in **Manage Credentials** after import.
 
 ## Keyboard shortcuts
 
@@ -89,6 +95,7 @@ If Explorer still shows a blank/generic icon after rebuilding, clear the Windows
 | Delete | Delete selected item |
 | Ctrl+C | Copy subtree |
 | Ctrl+V | Paste subtree |
+| Alt+Right-click | Range-select visible sessions |
 | F5 | Refresh tree view |
 
 ## Where RDP session data is stored

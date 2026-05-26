@@ -1,6 +1,7 @@
 #include "SessionDialog.h"
 
 #include "CredentialDialog.h"
+#include "CredentialUi.h"
 #include "ModalLoop.h"
 #include "Resource.h"
 #include "UiTheme.h"
@@ -21,22 +22,6 @@ struct State {
     HWND editPort = nullptr;
     HWND comboCred = nullptr;
 };
-
-void FillCredentials(HWND combo, ConnectionTreeModel& model, const std::wstring& selected) {
-    ComboBox_ResetContent(combo);
-    ComboBox_AddString(combo, L"(None)");
-    int sel = 0;
-    int idx = 1;
-    for (const auto& c : model.Credentials()) {
-        ComboBox_AddString(combo, c.label.c_str());
-        ComboBox_SetItemData(combo, idx, reinterpret_cast<LPARAM>(c.id.c_str()));
-        if (c.id == selected) {
-            sel = idx;
-        }
-        ++idx;
-    }
-    ComboBox_SetCurSel(combo, sel);
-}
 
 void Layout(HWND hwnd, State* st) {
     RECT rc{};
@@ -93,6 +78,11 @@ void Layout(HWND hwnd, State* st) {
 }
 
 INT_PTR CALLBACK DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    LRESULT themeResult = 0;
+    if (UiTheme::HandleDialogMessages(hwnd, msg, wParam, lParam, themeResult)) {
+        return themeResult;
+    }
+
     State* st = reinterpret_cast<State*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
     switch (msg) {
         case WM_CREATE: {
@@ -136,8 +126,8 @@ INT_PTR CALLBACK DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             CreateWindowExW(0, L"BUTTON", L"Cancel", WS_CHILD | WS_VISIBLE, 0, 0, 10, 10, hwnd,
                             reinterpret_cast<HMENU>(IDCANCEL), nullptr, nullptr);
 
-            FillCredentials(st->comboCred, *st->model, cred);
-            UiTheme::Apply(hwnd);
+            UiTheme::ApplyDialog(hwnd);
+            FillCredentialCombo(st->comboCred, *st->model, cred);
             Layout(hwnd, st);
             SetFocus(st->editName);
             return 0;
@@ -147,25 +137,11 @@ INT_PTR CALLBACK DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 Layout(hwnd, st);
             }
             return 0;
-        case WM_CTLCOLORSTATIC:
-            return UiTheme::OnCtlColorStatic(reinterpret_cast<HDC>(wParam));
         case WM_COMMAND:
             if (st && LOWORD(wParam) == IDC_SESS_MANAGE) {
+                const std::wstring selected = CredentialIdFromCombo(st->comboCred, *st->model);
                 ShowCredentialManager(hwnd, *st->model);
-                const int sel = ComboBox_GetCurSel(st->comboCred);
-                std::wstring selected;
-                if (sel > 0) {
-                    const int len = ComboBox_GetLBTextLen(st->comboCred, sel);
-                    std::wstring text(len, L'\0');
-                    ComboBox_GetLBText(st->comboCred, sel, text.data());
-                    for (const auto& c : st->model->Credentials()) {
-                        if (c.label == text) {
-                            selected = c.id;
-                            break;
-                        }
-                    }
-                }
-                FillCredentials(st->comboCred, *st->model, selected);
+                FillCredentialCombo(st->comboCred, *st->model, selected);
                 return 0;
             }
             if (LOWORD(wParam) == IDOK && st) {
@@ -179,19 +155,7 @@ INT_PTR CALLBACK DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 if (st->result->port <= 0 || st->result->port > 65535) {
                     st->result->port = 3389;
                 }
-                st->result->credentialId.clear();
-                const int sel = ComboBox_GetCurSel(st->comboCred);
-                if (sel > 0) {
-                    const int len = ComboBox_GetLBTextLen(st->comboCred, sel);
-                    std::wstring text(len, L'\0');
-                    ComboBox_GetLBText(st->comboCred, sel, text.data());
-                    for (const auto& c : st->model->Credentials()) {
-                        if (c.label == text) {
-                            st->result->credentialId = c.id;
-                            break;
-                        }
-                    }
-                }
+                st->result->credentialId = CredentialIdFromCombo(st->comboCred, *st->model);
                 if (st->result->name.empty() || st->result->host.empty() || !Util::IsValidHost(st->result->host)) {
                     MessageBoxW(hwnd, L"Enter a valid name and host.", L"Session", MB_ICONWARNING);
                     return 0;
@@ -201,11 +165,17 @@ INT_PTR CALLBACK DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 return 0;
             }
             if (LOWORD(wParam) == IDCANCEL) {
+                if (st && st->result) {
+                    st->result->accepted = false;
+                }
                 DestroyWindow(hwnd);
                 return 0;
             }
             break;
         case WM_CLOSE:
+            if (st && st->result) {
+                st->result->accepted = false;
+            }
             DestroyWindow(hwnd);
             return 0;
     }
@@ -241,7 +211,13 @@ bool ShowSessionDialog(HWND owner, ConnectionTreeModel& model, const TreeNode* e
         return false;
     }
 
-    CenterWindowOnOwner(dlg, owner, 420, 300);
+    CenterWindowOnOwner(dlg, owner, 420, 340);
+    SendMessageW(dlg, WM_SIZE, 0, MAKELPARAM(420, 340));
+    UiTheme::ApplyDialog(dlg);
+    if (st.comboCred) {
+        const std::wstring cred = existing ? existing->credentialId : L"";
+        FillCredentialCombo(st.comboCred, model, cred);
+    }
     ShowWindow(dlg, SW_SHOW);
     UpdateWindow(dlg);
     EnableWindow(owner, FALSE);
