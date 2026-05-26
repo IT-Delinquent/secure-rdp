@@ -2,6 +2,24 @@
 
 A small native Windows desktop application for organizing Remote Desktop sessions in a folder tree. Passwords are stored in **Windows Credential Manager** (DPAPI-backed); connection data on disk never contains secrets.
 
+## Technologies
+
+| Area | Stack |
+|------|--------|
+| Language | **C++17** (MSVC, `/W4`, static CRT in Release) |
+| Build | **CMake** 3.20+, **Visual Studio 2022** (x64), Windows SDK |
+| UI | **Win32** API — Common Controls (tree view, toolbar), modal dialogs, **uxtheme** for visual styles |
+| Persistence | **JSON** on disk (`connections.json`, `credentials.json`) via vendored [**nlohmann/json**](https://github.com/nlohmann/json) |
+| Import / export | [**MSXML 6**](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ms763742(v=vs.85)) (DOM) for mRemoteNG-compatible XML |
+| Secrets | **Windows Credential Manager** (`wincred.h`) — DPAPI-backed profile passwords and `TERMSRV/{host}` entries for RDP |
+| Remote Desktop | **`mstsc.exe`**, temporary `.rdp` launch files (no password fields on disk) |
+| Clipboard | Custom `SecureRdp/NodeV1` format (JSON subtree) via Win32 clipboard APIs |
+| Drag-and-drop | Tree-view reparenting with Common Controls hit-testing |
+| Resources | Windows **`.rc`** resources and embedded **`.ico`** application icon |
+| Dev tooling (optional) | **Python** + **Pillow** to regenerate `resources/app.ico` from `app-source.png` |
+
+No third-party UI framework, package manager, or runtime beyond the Windows SDK and the single header-only JSON dependency in `external/`.
+
 ## Features
 
 - Tree view with folders and RDP sessions (name, host/IP, port default 3389)

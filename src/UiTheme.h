@@ -20,6 +20,8 @@ void ReleaseFont();
 
 void Apply(HWND hwnd);
 void ApplyTree(HWND tree);
+HBRUSH DialogBackgroundBrush();
+INT_PTR OnCtlColorStatic(HDC hdc);
 
 void MenuInitItem(MenuItemData& item, const wchar_t* text);
 bool MenuAppend(HMENU menu, UINT_PTR id, MenuItemData& item, UINT flags = 0);

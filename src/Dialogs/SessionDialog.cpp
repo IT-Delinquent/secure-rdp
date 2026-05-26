@@ -101,7 +101,7 @@ INT_PTR CALLBACK DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(st));
 
             auto mkLabel = [&](int id) {
-                return CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE, 0, 0, 10, 10, hwnd,
+                return CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE | SS_LEFT, 0, 0, 10, 10, hwnd,
                                        reinterpret_cast<HMENU>(static_cast<INT_PTR>(id)), nullptr, nullptr);
             };
             mkLabel(10);
@@ -147,6 +147,8 @@ INT_PTR CALLBACK DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 Layout(hwnd, st);
             }
             return 0;
+        case WM_CTLCOLORSTATIC:
+            return UiTheme::OnCtlColorStatic(reinterpret_cast<HDC>(wParam));
         case WM_COMMAND:
             if (st && LOWORD(wParam) == IDC_SESS_MANAGE) {
                 ShowCredentialManager(hwnd, *st->model);
@@ -221,7 +223,7 @@ bool ShowSessionDialog(HWND owner, ConnectionTreeModel& model, const TreeNode* e
         wc.lpfnWndProc = DlgProc;
         wc.hInstance = GetModuleHandleW(nullptr);
         wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
-        wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
+        wc.hbrBackground = UiTheme::DialogBackgroundBrush();
         wc.lpszClassName = L"SecureRdpSessionDlg";
         RegisterClassExW(&wc);
         registered = true;

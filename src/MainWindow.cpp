@@ -2,6 +2,7 @@
 
 #include "App.h"
 #include "Clipboard.h"
+#include "Dialogs/AboutDialog.h"
 #include "Dialogs/CredentialDialog.h"
 #include "Dialogs/FolderDialog.h"
 #include "Dialogs/SessionDialog.h"
@@ -29,6 +30,7 @@ struct MainMenuItems {
     UiTheme::MenuItemData manageCreds{};
     UiTheme::MenuItemData import{};
     UiTheme::MenuItemData exportItem{};
+    UiTheme::MenuItemData about{};
     UiTheme::MenuItemData exit{};
     UiTheme::MenuItemData edit{};
     UiTheme::MenuItemData del{};
@@ -47,6 +49,7 @@ struct MainMenuItems {
         UiTheme::MenuInitItem(manageCreds, L"Manage &Credentials...");
         UiTheme::MenuInitItem(import, L"&Import...");
         UiTheme::MenuInitItem(exportItem, L"E&xport...");
+        UiTheme::MenuInitItem(about, L"&About...");
         UiTheme::MenuInitItem(exit, L"E&xit");
         UiTheme::MenuInitItem(edit, L"&Edit");
         UiTheme::MenuInitItem(del, L"&Delete");
@@ -166,6 +169,7 @@ void MainWindow::CreateMenus() {
     UiTheme::MenuAppend(fileMenu, IDM_IMPORT, m.import);
     UiTheme::MenuAppend(fileMenu, IDM_EXPORT, m.exportItem);
     AppendMenuW(fileMenu, MF_SEPARATOR, 0, nullptr);
+    UiTheme::MenuAppend(fileMenu, IDM_ABOUT, m.about);
     UiTheme::MenuAppend(fileMenu, IDM_EXIT, m.exit);
 
     UiTheme::MenuAppend(editMenu, IDM_EDIT, m.edit);
@@ -177,7 +181,41 @@ void MainWindow::CreateMenus() {
 
     UiTheme::MenuAppend(menuBar, reinterpret_cast<UINT_PTR>(fileMenu), m.fileLabel, MF_POPUP);
     UiTheme::MenuAppend(menuBar, reinterpret_cast<UINT_PTR>(editMenu), m.editLabel, MF_POPUP);
+    fileMenu_ = fileMenu;
+    editMenu_ = editMenu;
     SetMenu(hwnd_, menuBar);
+}
+
+TreeNode* MainWindow::GetNodeForTreeItem(HTREEITEM item) {
+    if (!item) {
+        return nullptr;
+    }
+    TVITEMW tv{};
+    tv.mask = TVIF_PARAM;
+    tv.hItem = item;
+    if (!TreeView_GetItem(tree_, &tv) || !tv.lParam) {
+        return nullptr;
+    }
+    return Model().FindNode(*reinterpret_cast<std::wstring*>(tv.lParam));
+}
+
+void MainWindow::UpdateMenuState(HMENU menu) {
+    TreeNode* node = GetSelectedNode();
+    const bool hasEditableItem = node && node->id != Model().Root().id;
+    const bool isSession = node && node->IsSession();
+    const UINT enable = MF_BYCOMMAND | MF_ENABLED;
+    const UINT disable = MF_BYCOMMAND | MF_GRAYED;
+
+    if (menu == fileMenu_) {
+        EnableMenuItem(menu, IDM_CONNECT, isSession ? enable : disable);
+    }
+    if (menu == editMenu_) {
+        EnableMenuItem(menu, IDM_EDIT, hasEditableItem ? enable : disable);
+        EnableMenuItem(menu, IDM_DELETE, hasEditableItem ? enable : disable);
+        EnableMenuItem(menu, IDM_DUPLICATE, hasEditableItem ? enable : disable);
+        EnableMenuItem(menu, IDM_COPY, hasEditableItem ? enable : disable);
+        EnableMenuItem(menu, IDM_PASTE, ClipboardManager::HasPasteData() ? enable : disable);
+    }
 }
 
 void MainWindow::SetStatusText(const std::wstring& text) {
@@ -557,9 +595,19 @@ void MainWindow::PasteToSelected() {
     Save();
 }
 
-void MainWindow::ShowContextMenu(int x, int y) {
+void MainWindow::ShowContextMenu(int screenX, int screenY) {
     HMENU menu = CreatePopupMenu();
-    TreeNode* node = GetSelectedNode();
+
+    POINT pt{screenX, screenY};
+    ScreenToClient(tree_, &pt);
+    HTREEITEM hit = HitTestItem(pt.x, pt.y);
+    if (hit) {
+        TreeView_SelectItem(tree_, hit);
+    } else {
+        TreeView_SelectItem(tree_, nullptr);
+    }
+
+    TreeNode* node = GetNodeForTreeItem(hit);
     const bool isSession = node && node->IsSession();
     const bool isRoot = node && node->id == Model().Root().id;
 
@@ -589,7 +637,7 @@ void MainWindow::ShowContextMenu(int x, int y) {
         addItem(IDM_PASTE, L"Paste");
     }
 
-    TrackPopupMenu(menu, TPM_RIGHTBUTTON | TPM_LEFTALIGN | TPM_TOPALIGN, x, y, 0, hwnd_, nullptr);
+    TrackPopupMenu(menu, TPM_RIGHTBUTTON | TPM_LEFTALIGN | TPM_TOPALIGN, screenX, screenY, 0, hwnd_, nullptr);
     DestroyMenu(menu);
 }
 
@@ -627,6 +675,9 @@ void MainWindow::OnCommand(int id) {
             break;
         case IDM_EXPORT:
             ExportConnections();
+            break;
+        case IDM_ABOUT:
+            ShowAboutDialog(hwnd_);
             break;
         case IDM_EXIT:
             DestroyWindow(hwnd_);
@@ -704,6 +755,9 @@ LRESULT CALLBACK MainWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
             if (HIWORD(wParam) == 0) {
                 self->OnCommand(LOWORD(wParam));
             }
+            return 0;
+        case WM_INITMENUPOPUP:
+            self->UpdateMenuState(reinterpret_cast<HMENU>(wParam));
             return 0;
         case WM_NOTIFY:
             self->OnNotify(reinterpret_cast<LPNMHDR>(lParam));

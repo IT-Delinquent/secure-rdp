@@ -49,7 +49,9 @@ private:
     void PasteToSelected();
     void ImportConnections();
     void ExportConnections();
-    void ShowContextMenu(int x, int y);
+    void ShowContextMenu(int screenX, int screenY);
+    void UpdateMenuState(HMENU menu);
+    TreeNode* GetNodeForTreeItem(HTREEITEM item);
 
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -61,6 +63,8 @@ private:
     HWND status_ = nullptr;
     HINSTANCE hInstance_ = nullptr;
     HIMAGELIST imageList_ = nullptr;
+    HMENU fileMenu_ = nullptr;
+    HMENU editMenu_ = nullptr;
 
     std::unordered_map<std::wstring, HTREEITEM> idToItem_;
     DragDropController dragDrop_;

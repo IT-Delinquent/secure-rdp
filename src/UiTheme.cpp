@@ -14,6 +14,7 @@ namespace {
 
 HFONT g_font = nullptr;
 HFONT g_fontSemibold = nullptr;
+HBRUSH g_dialogBgBrush = nullptr;
 
 constexpr int kMenuPadY = 6;
 constexpr int kMenuHorzPad = 28;
@@ -68,6 +69,13 @@ HFONT AcquireFont(int pointSize, bool semibold) {
     return g_font ? g_font : static_cast<HFONT>(GetStockObject(DEFAULT_GUI_FONT));
 }
 
+void ReleaseDialogBrush() {
+    if (g_dialogBgBrush) {
+        DeleteObject(g_dialogBgBrush);
+        g_dialogBgBrush = nullptr;
+    }
+}
+
 void ReleaseFont() {
     if (g_font) {
         DeleteObject(g_font);
@@ -77,6 +85,20 @@ void ReleaseFont() {
         DeleteObject(g_fontSemibold);
         g_fontSemibold = nullptr;
     }
+    ReleaseDialogBrush();
+}
+
+HBRUSH DialogBackgroundBrush() {
+    if (!g_dialogBgBrush) {
+        g_dialogBgBrush = CreateSolidBrush(kBackground);
+    }
+    return g_dialogBgBrush;
+}
+
+INT_PTR OnCtlColorStatic(HDC hdc) {
+    SetBkMode(hdc, TRANSPARENT);
+    SetTextColor(hdc, RGB(32, 32, 32));
+    return reinterpret_cast<INT_PTR>(DialogBackgroundBrush());
 }
 
 void Apply(HWND hwnd) {

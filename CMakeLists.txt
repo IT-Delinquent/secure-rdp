@@ -29,6 +29,7 @@ set(SOURCES
     src/Dialogs/SessionDialog.cpp
     src/Dialogs/FolderDialog.cpp
     src/Dialogs/CredentialDialog.cpp
+    src/Dialogs/AboutDialog.cpp
     resources/app.rc
 )
 
