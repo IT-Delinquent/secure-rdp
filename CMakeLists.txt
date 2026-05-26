@@ -37,7 +37,7 @@ add_executable(SecureRdp WIN32 ${SOURCES})
 
 # Rebuild resources when the icon changes.
 set_source_files_properties(resources/app.rc PROPERTIES
-    OBJECT_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/resources/app.ico"
+    OBJECT_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/resources/app.ico;${CMAKE_CURRENT_SOURCE_DIR}/resources/app-source-no-background.png"
 )
 set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} /I\"${CMAKE_CURRENT_SOURCE_DIR}/resources\"")
 

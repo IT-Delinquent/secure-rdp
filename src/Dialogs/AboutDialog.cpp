@@ -20,6 +20,13 @@ std::wstring AboutBody() {
     text += SECURE_RDP_VERSION;
     text += L"\r\n\r\nA native Windows desktop application for organizing Remote Desktop sessions in a folder tree.\r\n";
     text += L"Passwords are stored in Windows Credential Manager (DPAPI-backed); connection data on disk never contains secrets.\r\n\r\n";
+    text += L"RDP session data is stored in the following locations:\r\n";
+    text += L" - %AppData%\\SecureRdp\\connections.json — folder tree and sessions (name, host, port, credential link; no passwords)\r\n";
+    text += L" - %AppData%\\SecureRdp\\credentials.json — profile labels, usernames, domains (no passwords)\r\n";
+    text += L" - Credential Manager: SecureRdp/Profile/{uuid} — profile passwords\r\n";
+    text += L" - Credential Manager: TERMSRV/{host[:port]} — mirrored on connect for mstsc.exe\r\n";
+    text += L" - %TEMP%\\SecureRdp\\{session-id}.rdp — temporary launch files (no password fields)\r\n";
+    text += L" - %AppData%\\SecureRdp\\app.log — diagnostics only\r\n\r\n";
     text += L"Technologies\r\n";
     text += L"  Language: C++17 (MSVC, static CRT in Release)\r\n";
     text += L"  Build: CMake 3.20+, Visual Studio 2022 (x64), Windows SDK\r\n";

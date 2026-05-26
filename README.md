@@ -1,4 +1,4 @@
-# Secure RDP Connection Manager v0.0.1
+# Secure RDP Connection Manager v1.0.0
 
 A small native Windows desktop application for organizing Remote Desktop sessions in a folder tree. Passwords are stored in **Windows Credential Manager** (DPAPI-backed); connection data on disk never contains secrets.
 
@@ -16,7 +16,7 @@ A small native Windows desktop application for organizing Remote Desktop session
 | Clipboard | Custom `SecureRdp/NodeV1` format (JSON subtree) via Win32 clipboard APIs |
 | Drag-and-drop | Tree-view reparenting with Common Controls hit-testing |
 | Resources | Windows **`.rc`** resources and embedded **`.ico`** application icon |
-| Dev tooling (optional) | **Python** + **Pillow** to regenerate `resources/app.ico` from `app-source.png` |
+| Dev tooling (optional) | **Python** + **Pillow** — `resources/build_icon.py` regenerates `app.ico` from `app-source-no-background.png` |
 
 No third-party UI framework, package manager, or runtime beyond the Windows SDK and the single header-only JSON dependency in `external/`.
 
@@ -52,14 +52,23 @@ cmake -B build -G "Visual Studio 17 2022" -A x64
 cmake --build build --config Release
 ```
 
+## Building with full paths!
+```powershell
+cd c:\source\secure-rdp
+& "C:\Program Files\CMake\bin\cmake.exe" -B build -G "Visual Studio 17 2022" -A x64
+& "C:\Program Files\CMake\bin\cmake.exe" --build build --config Release
+```
+
 Output: `build\Release\SecureRdp.exe`
 
-To refresh the branding icon after changing `resources/app-source.png`:
+To refresh the branding icon after changing `resources/app-source-no-background.png`:
 
 ```powershell
-python -c "from PIL import Image; import os; img=Image.open('resources/app-source.png').convert('RGBA'); s=[(256,256),(128,128),(64,64),(48,48),(32,32),(16,16)]; icons=[img.resize(x,Image.Resampling.LANCZOS) for x in s]; icons[0].save('resources/app.ico',format='ICO',sizes=[(i.width,i.height) for i in icons],append_images=icons[1:])"
+python resources/build_icon.py
 cmake --build build --config Release --clean-first
 ```
+
+`build_icon.py` centers the visible artwork with uniform padding before resizing, so the title-bar icon is not clipped on one side.
 
 If Explorer still shows a blank/generic icon after rebuilding, clear the Windows icon cache (or open the new `SecureRdp-with-icon.exe` copy) — Explorer caches icons per path.
 
@@ -82,15 +91,20 @@ If Explorer still shows a blank/generic icon after rebuilding, clear the Windows
 | Ctrl+V | Paste subtree |
 | F5 | Refresh tree view |
 
-## Data locations
+## Where RDP session data is stored
 
-| Path | Contents |
-|------|----------|
-| `%AppData%\SecureRdp\connections.json` | Folder/session tree |
-| `%AppData%\SecureRdp\credentials.json` | Credential labels and usernames (no passwords) |
-| `%AppData%\SecureRdp\app.log` | Application log (diagnostics) |
-| `%TEMP%\SecureRdp\*.rdp` | Temporary launch files (no password fields) |
-| Credential Manager | Passwords and TERMSRV entries |
+All persistent app data lives under **`%AppData%\SecureRdp\`** (Roaming AppData, e.g. `C:\Users\<you>\AppData\Roaming\SecureRdp\`).
+
+| Location | What is stored |
+|----------|----------------|
+| `%AppData%\SecureRdp\connections.json` | Folder tree and **RDP sessions**: display name, host/IP, port (default 3389), session id, and optional `credentialId` linking to a profile. **No passwords.** |
+| `%AppData%\SecureRdp\credentials.json` | Credential **profiles**: id, label, username, domain. **No passwords.** |
+| Windows Credential Manager — `SecureRdp/Profile/{profile-uuid}` | Password for each credential profile (DPAPI-backed). |
+| Windows Credential Manager — `TERMSRV/{host}` or `TERMSRV/{host:port}` | Mirrored credentials written when you connect, so `mstsc.exe` can sign in (same idea as `cmdkey /generic:TERMSRV/...`). |
+| `%TEMP%\SecureRdp\{session-id}.rdp` | Short-lived launch file per connect: address, port, fullscreen flags, optional username. **No password fields.** |
+| `%AppData%\SecureRdp\app.log` | Application log (diagnostics only; not session configuration) |
+
+Clipboard copy/paste uses in-memory format `SecureRdp/NodeV1` (JSON subtree, no secrets)—nothing extra is written to disk for that.
 
 ## Logging
 
