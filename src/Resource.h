@@ -1,0 +1,41 @@
+#pragma once
+
+// Resource ID 1 is required for the .exe icon in Windows Explorer.
+#define IDI_APPICON 1
+
+#define IDM_CONNECT 1001
+#define IDM_NEW_SESSION 1002
+#define IDM_NEW_FOLDER 1003
+#define IDM_EDIT 1004
+#define IDM_DELETE 1005
+#define IDM_DUPLICATE 1006
+#define IDM_COPY 1007
+#define IDM_PASTE 1008
+#define IDM_MANAGE_CREDS 1009
+#define IDM_EXIT 1010
+
+#define IDC_TREE 2001
+#define IDC_STATUS 2002
+
+#define IDD_SESSION 3001
+#define IDC_SESS_NAME 3002
+#define IDC_SESS_HOST 3003
+#define IDC_SESS_PORT 3004
+#define IDC_SESS_CRED 3005
+#define IDC_SESS_MANAGE 3006
+
+#define IDD_FOLDER 3101
+#define IDC_FOLDER_LABEL 3100
+#define IDC_FOLDER_NAME 3102
+
+#define IDD_CREDENTIAL 3201
+#define IDC_CRED_LIST 3202
+#define IDC_CRED_ADD 3203
+#define IDC_CRED_EDIT 3204
+#define IDC_CRED_DELETE 3205
+
+#define IDD_CRED_EDIT 3301
+#define IDC_CRED_LABEL 3302
+#define IDC_CRED_USER 3303
+#define IDC_CRED_DOMAIN 3304
+#define IDC_CRED_PASS 3305
