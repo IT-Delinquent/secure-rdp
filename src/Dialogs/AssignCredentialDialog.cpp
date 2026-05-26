@@ -16,6 +16,7 @@
 namespace {
 
 constexpr wchar_t kStateProp[] = L"SecureRdpAssignCredDlgState";
+constexpr UINT WM_APP_REFRESH_CREDENTIALS = WM_APP + 41;
 constexpr int IDC_ASSIGN_LABEL = 3601;
 constexpr int IDC_ASSIGN_CRED = 3602;
 constexpr int IDC_ASSIGN_MANAGE = 3603;
@@ -108,7 +109,7 @@ INT_PTR CALLBACK DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                             reinterpret_cast<HMENU>(static_cast<INT_PTR>(IDCANCEL)), nullptr, nullptr);
 
             UiTheme::ApplyDialog(hwnd);
-            FillCredentialCombo(st->comboCred, *st->model, L"");
+            PostMessageW(hwnd, WM_APP_REFRESH_CREDENTIALS, 0, 0);
             Layout(hwnd, st);
             SetFocus(st->comboCred);
             return 0;
@@ -116,12 +117,14 @@ INT_PTR CALLBACK DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case WM_SIZE:
             Layout(hwnd, st);
             return 0;
-        case WM_SHOWWINDOW:
-            if (wParam && st) {
-                RefreshCredentialCombo(st);
-            }
+        case WM_APP_REFRESH_CREDENTIALS:
+            RefreshCredentialCombo(st);
             return 0;
         case WM_COMMAND:
+            if (st && LOWORD(wParam) == IDC_ASSIGN_CRED && HIWORD(wParam) == CBN_SETFOCUS) {
+                RefreshCredentialCombo(st);
+                return 0;
+            }
             if (st && LOWORD(wParam) == IDC_ASSIGN_MANAGE) {
                 ShowCredentialManager(hwnd, *st->model);
                 RefreshCredentialCombo(st);
@@ -194,9 +197,6 @@ bool ShowAssignCredentialDialog(HWND owner, ConnectionTreeModel& model, int sess
     CenterWindowOnOwner(dlg, owner, 420, 200);
     SendMessageW(dlg, WM_SIZE, 0, MAKELPARAM(420, 200));
     UiTheme::ApplyDialog(dlg);
-    if (HWND combo = GetDlgItem(dlg, IDC_ASSIGN_CRED)) {
-        FillCredentialCombo(combo, model, L"");
-    }
     ShowWindow(dlg, SW_SHOW);
     UpdateWindow(dlg);
     EnableWindow(owner, FALSE);
