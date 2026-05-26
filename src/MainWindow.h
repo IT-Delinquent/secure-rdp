@@ -47,6 +47,8 @@ private:
     void DuplicateSelected();
     void CopySelected();
     void PasteToSelected();
+    void ImportConnections();
+    void ExportConnections();
     void ShowContextMenu(int x, int y);
 
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);

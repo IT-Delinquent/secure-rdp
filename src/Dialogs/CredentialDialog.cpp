@@ -2,6 +2,7 @@
 
 #include "CredentialVault.h"
 #include "Resource.h"
+#include "UiTheme.h"
 #include "Util.h"
 
 #include <windows.h>
@@ -59,6 +60,7 @@ LRESULT CALLBACK CredEditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                             reinterpret_cast<HMENU>(IDOK), nullptr, nullptr);
             CreateWindowExW(0, L"BUTTON", L"Cancel", WS_CHILD | WS_VISIBLE, m + 90, y + 8, 80, 28, hwnd,
                             reinterpret_cast<HMENU>(IDCANCEL), nullptr, nullptr);
+            UiTheme::Apply(hwnd);
             return 0;
         }
         case WM_COMMAND:
@@ -180,6 +182,7 @@ INT_PTR CALLBACK CredMgrProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             CreateWindowExW(0, L"BUTTON", L"Close", WS_CHILD | WS_VISIBLE, 260, 220, 70, 28, hwnd,
                             reinterpret_cast<HMENU>(IDCANCEL), nullptr, nullptr);
             RefreshList(*st);
+            UiTheme::Apply(hwnd);
             return 0;
         }
         case WM_COMMAND:

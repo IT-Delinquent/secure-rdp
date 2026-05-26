@@ -3,6 +3,7 @@
 #include "CredentialDialog.h"
 #include "ModalLoop.h"
 #include "Resource.h"
+#include "UiTheme.h"
 #include "Util.h"
 
 #include <windows.h>
@@ -136,6 +137,7 @@ INT_PTR CALLBACK DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                             reinterpret_cast<HMENU>(IDCANCEL), nullptr, nullptr);
 
             FillCredentials(st->comboCred, *st->model, cred);
+            UiTheme::Apply(hwnd);
             Layout(hwnd, st);
             SetFocus(st->editName);
             return 0;

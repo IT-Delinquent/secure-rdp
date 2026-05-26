@@ -13,6 +13,8 @@
 #define IDM_PASTE 1008
 #define IDM_MANAGE_CREDS 1009
 #define IDM_EXIT 1010
+#define IDM_IMPORT 1011
+#define IDM_EXPORT 1012
 
 #define IDC_TREE 2001
 #define IDC_STATUS 2002

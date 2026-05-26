@@ -8,6 +8,7 @@ A small native Windows desktop application for organizing Remote Desktop session
 - Reusable credential profiles linked to sessions
 - Launch sessions in **fullscreen** via `mstsc.exe` (separate process)
 - Drag-and-drop reparenting, copy/paste, duplicate
+- Import and export connections in **mRemoteNG XML** format (folders and RDP sessions)
 - Inline rename (F2 / slow double-click on label)
 - Toolbar, menus, and context menu
 
@@ -51,6 +52,7 @@ If Explorer still shows a blank/generic icon after rebuilding, clear the Windows
 3. Create folders and sessions; link a credential in the session editor.
 4. Double-click a session or press **Connect** / Enter to launch fullscreen RDP.
 5. Drag items to reorganize; **Ctrl+C** / **Ctrl+V** to copy/paste subtrees; **Duplicate** from the Edit menu.
+6. Use **File → Import** / **Export** for mRemoteNG-compatible XML (`.xml`). Import merges into the selected folder (or the root). Non-RDP protocols are skipped on import; passwords from mRemoteNG files are not imported (they are encrypted in that format)—set passwords in **Manage Credentials** after import.
 
 ## Keyboard shortcuts
 

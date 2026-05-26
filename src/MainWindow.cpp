@@ -6,13 +6,62 @@
 #include "Dialogs/FolderDialog.h"
 #include "Dialogs/SessionDialog.h"
 #include "Logger.h"
+#include "MRemoteNgExchange.h"
 #include "Resource.h"
 #include "UiTheme.h"
 #include "Version.h"
 
 #include <commctrl.h>
+#include <commdlg.h>
 #include <shellapi.h>
+#include <sstream>
+#include <vector>
 #include <windows.h>
+
+namespace {
+
+struct MainMenuItems {
+    UiTheme::MenuItemData fileLabel{};
+    UiTheme::MenuItemData editLabel{};
+    UiTheme::MenuItemData connect{};
+    UiTheme::MenuItemData newSession{};
+    UiTheme::MenuItemData newFolder{};
+    UiTheme::MenuItemData manageCreds{};
+    UiTheme::MenuItemData import{};
+    UiTheme::MenuItemData exportItem{};
+    UiTheme::MenuItemData exit{};
+    UiTheme::MenuItemData edit{};
+    UiTheme::MenuItemData del{};
+    UiTheme::MenuItemData duplicate{};
+    UiTheme::MenuItemData copy{};
+    UiTheme::MenuItemData paste{};
+
+    MainMenuItems() {
+        UiTheme::MenuInitItem(fileLabel, L"&File");
+        fileLabel.compact = true;
+        UiTheme::MenuInitItem(editLabel, L"&Edit");
+        editLabel.compact = true;
+        UiTheme::MenuInitItem(connect, L"&Connect\tEnter");
+        UiTheme::MenuInitItem(newSession, L"New &Session");
+        UiTheme::MenuInitItem(newFolder, L"New &Folder");
+        UiTheme::MenuInitItem(manageCreds, L"Manage &Credentials...");
+        UiTheme::MenuInitItem(import, L"&Import...");
+        UiTheme::MenuInitItem(exportItem, L"E&xport...");
+        UiTheme::MenuInitItem(exit, L"E&xit");
+        UiTheme::MenuInitItem(edit, L"&Edit");
+        UiTheme::MenuInitItem(del, L"&Delete");
+        UiTheme::MenuInitItem(duplicate, L"Dupli&cate");
+        UiTheme::MenuInitItem(copy, L"&Copy\tCtrl+C");
+        UiTheme::MenuInitItem(paste, L"&Paste\tCtrl+V");
+    }
+};
+
+MainMenuItems& MainMenu() {
+    static MainMenuItems items;
+    return items;
+}
+
+}  // namespace
 
 MainWindow* MainWindow::s_instance = nullptr;
 
@@ -102,28 +151,32 @@ void MainWindow::CreateControls() {
 }
 
 void MainWindow::CreateMenus() {
+    MainMenuItems& m = MainMenu();
     HMENU menuBar = CreateMenu();
     HMENU fileMenu = CreatePopupMenu();
     HMENU editMenu = CreatePopupMenu();
 
-    AppendMenuW(fileMenu, MF_STRING, IDM_CONNECT, L"&Connect\tEnter");
+    UiTheme::MenuAppend(fileMenu, IDM_CONNECT, m.connect);
     AppendMenuW(fileMenu, MF_SEPARATOR, 0, nullptr);
-    AppendMenuW(fileMenu, MF_STRING, IDM_NEW_SESSION, L"New &Session");
-    AppendMenuW(fileMenu, MF_STRING, IDM_NEW_FOLDER, L"New &Folder");
+    UiTheme::MenuAppend(fileMenu, IDM_NEW_SESSION, m.newSession);
+    UiTheme::MenuAppend(fileMenu, IDM_NEW_FOLDER, m.newFolder);
     AppendMenuW(fileMenu, MF_SEPARATOR, 0, nullptr);
-    AppendMenuW(fileMenu, MF_STRING, IDM_MANAGE_CREDS, L"Manage &Credentials...");
+    UiTheme::MenuAppend(fileMenu, IDM_MANAGE_CREDS, m.manageCreds);
     AppendMenuW(fileMenu, MF_SEPARATOR, 0, nullptr);
-    AppendMenuW(fileMenu, MF_STRING, IDM_EXIT, L"E&xit");
+    UiTheme::MenuAppend(fileMenu, IDM_IMPORT, m.import);
+    UiTheme::MenuAppend(fileMenu, IDM_EXPORT, m.exportItem);
+    AppendMenuW(fileMenu, MF_SEPARATOR, 0, nullptr);
+    UiTheme::MenuAppend(fileMenu, IDM_EXIT, m.exit);
 
-    AppendMenuW(editMenu, MF_STRING, IDM_EDIT, L"&Edit");
-    AppendMenuW(editMenu, MF_STRING, IDM_DELETE, L"&Delete");
-    AppendMenuW(editMenu, MF_STRING, IDM_DUPLICATE, L"Dupli&cate");
+    UiTheme::MenuAppend(editMenu, IDM_EDIT, m.edit);
+    UiTheme::MenuAppend(editMenu, IDM_DELETE, m.del);
+    UiTheme::MenuAppend(editMenu, IDM_DUPLICATE, m.duplicate);
     AppendMenuW(editMenu, MF_SEPARATOR, 0, nullptr);
-    AppendMenuW(editMenu, MF_STRING, IDM_COPY, L"&Copy\tCtrl+C");
-    AppendMenuW(editMenu, MF_STRING, IDM_PASTE, L"&Paste\tCtrl+V");
+    UiTheme::MenuAppend(editMenu, IDM_COPY, m.copy);
+    UiTheme::MenuAppend(editMenu, IDM_PASTE, m.paste);
 
-    AppendMenuW(menuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(fileMenu), L"&File");
-    AppendMenuW(menuBar, MF_POPUP, reinterpret_cast<UINT_PTR>(editMenu), L"&Edit");
+    UiTheme::MenuAppend(menuBar, reinterpret_cast<UINT_PTR>(fileMenu), m.fileLabel, MF_POPUP);
+    UiTheme::MenuAppend(menuBar, reinterpret_cast<UINT_PTR>(editMenu), m.editLabel, MF_POPUP);
     SetMenu(hwnd_, menuBar);
 }
 
@@ -394,6 +447,98 @@ void MainWindow::CopySelected() {
     }
 }
 
+namespace {
+
+bool BrowseXmlFile(HWND owner, bool save, std::wstring& path) {
+    wchar_t buffer[MAX_PATH]{};
+    if (!path.empty() && path.size() < MAX_PATH) {
+        wcscpy_s(buffer, path.c_str());
+    }
+
+    OPENFILENAMEW ofn{};
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = owner;
+    ofn.lpstrFilter = L"mRemoteNG XML (*.xml)\0*.xml\0All files (*.*)\0*.*\0\0";
+    ofn.lpstrFile = buffer;
+    ofn.nMaxFile = MAX_PATH;
+    ofn.lpstrDefExt = L"xml";
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+    if (save) {
+        ofn.Flags |= OFN_OVERWRITEPROMPT;
+    } else {
+        ofn.Flags |= OFN_FILEMUSTEXIST;
+    }
+
+    if (save ? GetSaveFileNameW(&ofn) : GetOpenFileNameW(&ofn)) {
+        path = buffer;
+        return true;
+    }
+    return false;
+}
+
+TreeNode* ResolveImportTarget(ConnectionTreeModel& model, const std::wstring& selectedId) {
+    TreeNode* target = model.FindNode(selectedId.empty() ? model.Root().id : selectedId);
+    if (!target) {
+        return &model.Root();
+    }
+    if (!target->IsFolder()) {
+        target = model.FindParent(target->id);
+    }
+    return target ? target : &model.Root();
+}
+
+}  // namespace
+
+void MainWindow::ImportConnections() {
+    std::wstring path;
+    if (!BrowseXmlFile(hwnd_, false, path)) {
+        return;
+    }
+
+    TreeNode* target = ResolveImportTarget(Model(), GetSelectedNodeId());
+    MRemoteNgImportStats stats{};
+    std::wstring error;
+    if (!MRemoteNgExchange::ImportFile(path, Model(), *target, stats, error)) {
+        MessageBoxW(hwnd_, error.c_str(), L"Import failed", MB_ICONERROR);
+        return;
+    }
+
+    RefreshTree();
+    Save();
+
+    std::wostringstream summary;
+    summary << L"Imported " << stats.folders << L" folder(s) and " << stats.sessions << L" RDP session(s)";
+    if (stats.skippedNonRdp > 0) {
+        summary << L"\nSkipped " << stats.skippedNonRdp << L" non-RDP connection(s).";
+    }
+    summary << L"\n\nmRemoteNG passwords are encrypted and were not imported. "
+               L"Assign passwords in Manage Credentials if needed.";
+    MessageBoxW(hwnd_, summary.str().c_str(), L"Import complete", MB_ICONINFORMATION);
+    SetStatusText(L"Imported from " + path);
+}
+
+void MainWindow::ExportConnections() {
+    TreeNode* selected = GetSelectedNode();
+    const TreeNode& exportRoot = selected ? *selected : Model().Root();
+
+    std::wstring path;
+    if (!BrowseXmlFile(hwnd_, true, path)) {
+        return;
+    }
+
+    std::wstring error;
+    if (!MRemoteNgExchange::ExportFile(path, exportRoot, Model(), error)) {
+        MessageBoxW(hwnd_, error.c_str(), L"Export failed", MB_ICONERROR);
+        return;
+    }
+
+    MessageBoxW(hwnd_,
+                L"Exported in mRemoteNG XML format.\nPasswords are omitted; usernames are included when a credential "
+                L"profile is linked.",
+                L"Export complete", MB_ICONINFORMATION);
+    SetStatusText(L"Exported to " + path);
+}
+
 void MainWindow::PasteToSelected() {
     auto pasted = ClipboardManager::PasteSubtree();
     if (!pasted) {
@@ -418,22 +563,30 @@ void MainWindow::ShowContextMenu(int x, int y) {
     const bool isSession = node && node->IsSession();
     const bool isRoot = node && node->id == Model().Root().id;
 
+    std::vector<UiTheme::MenuItemData> items;
+    items.reserve(10);
+    auto addItem = [&](UINT id, const wchar_t* text) {
+        items.push_back({});
+        UiTheme::MenuInitItem(items.back(), text);
+        UiTheme::MenuAppend(menu, id, items.back());
+    };
+
     if (isSession) {
-        AppendMenuW(menu, MF_STRING, IDM_CONNECT, L"Connect");
+        addItem(IDM_CONNECT, L"Connect");
         AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     }
-    AppendMenuW(menu, MF_STRING, IDM_NEW_SESSION, L"New Session");
-    AppendMenuW(menu, MF_STRING, IDM_NEW_FOLDER, L"New Folder");
+    addItem(IDM_NEW_SESSION, L"New Session");
+    addItem(IDM_NEW_FOLDER, L"New Folder");
     if (node && !isRoot) {
         AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-        AppendMenuW(menu, MF_STRING, IDM_EDIT, L"Edit");
-        AppendMenuW(menu, MF_STRING, IDM_DUPLICATE, L"Duplicate");
-        AppendMenuW(menu, MF_STRING, IDM_DELETE, L"Delete");
+        addItem(IDM_EDIT, L"Edit");
+        addItem(IDM_DUPLICATE, L"Duplicate");
+        addItem(IDM_DELETE, L"Delete");
         AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-        AppendMenuW(menu, MF_STRING, IDM_COPY, L"Copy");
+        addItem(IDM_COPY, L"Copy");
     }
     if (ClipboardManager::HasPasteData()) {
-        AppendMenuW(menu, MF_STRING, IDM_PASTE, L"Paste");
+        addItem(IDM_PASTE, L"Paste");
     }
 
     TrackPopupMenu(menu, TPM_RIGHTBUTTON | TPM_LEFTALIGN | TPM_TOPALIGN, x, y, 0, hwnd_, nullptr);
@@ -468,6 +621,12 @@ void MainWindow::OnCommand(int id) {
             break;
         case IDM_MANAGE_CREDS:
             ShowCredentialManager(hwnd_, Model());
+            break;
+        case IDM_IMPORT:
+            ImportConnections();
+            break;
+        case IDM_EXPORT:
+            ExportConnections();
             break;
         case IDM_EXIT:
             DestroyWindow(hwnd_);
@@ -582,6 +741,16 @@ LRESULT CALLBACK MainWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
                 self->dragDrop_.OnMouseMove(self->tree_, pt.x, pt.y);
             }
             return 0;
+        case WM_MEASUREITEM:
+            if (UiTheme::MenuOnMeasureItem(lParam)) {
+                return TRUE;
+            }
+            break;
+        case WM_DRAWITEM:
+            if (UiTheme::MenuOnDrawItem(lParam)) {
+                return TRUE;
+            }
+            break;
         case WM_KEYDOWN:
             if (wParam == VK_F5) {
                 self->RefreshTree();

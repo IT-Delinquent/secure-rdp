@@ -18,6 +18,7 @@ set(SOURCES
     src/MainWindow.cpp
     src/ConnectionTreeModel.cpp
     src/JsonStore.cpp
+    src/MRemoteNgExchange.cpp
     src/CredentialVault.cpp
     src/RdpLauncher.cpp
     src/Clipboard.cpp
