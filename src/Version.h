@@ -1,6 +1,6 @@
 #pragma once
 
-#define SECURE_RDP_VERSION_BASE L"v1.0.1"
+#define SECURE_RDP_VERSION_BASE L"v1.0.2"
 
 #include "BuildVersion.h"
 

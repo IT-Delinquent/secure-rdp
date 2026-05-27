@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.0.1] - 2026-05-26
+## [1.0.2] - 2026-05-26
 
 ### Added
 - Bulk credential assignment for multi-selected sessions and from folder context (**Set Credential...** with direct children or subtree scope).

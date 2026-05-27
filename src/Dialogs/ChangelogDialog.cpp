@@ -52,7 +52,7 @@ bool StartsWith(const std::wstring& s, const wchar_t* prefix) {
 }
 
 bool ParseVersionLine(const std::wstring& line, std::wstring& version, std::wstring& date) {
-    // [1.0.1] - 2026-05-26  or  ## [1.0.1] - 2026-05-26
+    // [1.0.2] - 2026-05-26  or  ## [1.0.2] - 2026-05-26
     std::wstring trimmed = Trim(line);
     if (trimmed.empty()) {
         return false;

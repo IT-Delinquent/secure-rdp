@@ -1,4 +1,4 @@
-# Secure RDP Connection Manager v1.0.1
+# Secure RDP Connection Manager v1.0.2
 
 A small native Windows desktop application for organizing Remote Desktop sessions in a folder tree. Passwords are stored in **Windows Credential Manager** (DPAPI-backed); connection data on disk never contains secrets.
 

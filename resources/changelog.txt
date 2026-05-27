@@ -1,4 +1,4 @@
-[1.0.1.release] - 2026-05-27
+[1.0.2.release] - 2026-05-27
 
 Added
 - Bulk credential assignment for multi-selected sessions and from folder context ("Set Credential..." with direct children or subtree scope).
