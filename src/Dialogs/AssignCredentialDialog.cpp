@@ -108,18 +108,11 @@ INT_PTR CALLBACK DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                             reinterpret_cast<HMENU>(static_cast<INT_PTR>(IDCANCEL)), nullptr, nullptr);
 
             UiTheme::ApplyDialog(hwnd);
-            FillCredentialCombo(st->comboCred, *st->model, L"");
             Layout(hwnd, st);
-            SetFocus(st->comboCred);
             return 0;
         }
         case WM_SIZE:
             Layout(hwnd, st);
-            return 0;
-        case WM_SHOWWINDOW:
-            if (wParam && st) {
-                RefreshCredentialCombo(st);
-            }
             return 0;
         case WM_COMMAND:
             if (st && LOWORD(wParam) == IDC_ASSIGN_MANAGE) {
@@ -194,11 +187,14 @@ bool ShowAssignCredentialDialog(HWND owner, ConnectionTreeModel& model, int sess
     CenterWindowOnOwner(dlg, owner, 420, 200);
     SendMessageW(dlg, WM_SIZE, 0, MAKELPARAM(420, 200));
     UiTheme::ApplyDialog(dlg);
-    if (HWND combo = GetDlgItem(dlg, IDC_ASSIGN_CRED)) {
-        FillCredentialCombo(combo, model, L"");
-    }
     ShowWindow(dlg, SW_SHOW);
     UpdateWindow(dlg);
+    if (State* shown = GetState(dlg)) {
+        RefreshCredentialCombo(shown);
+        if (shown->comboCred) {
+            SetFocus(shown->comboCred);
+        }
+    }
     EnableWindow(owner, FALSE);
 
     RunModalLoop(dlg);

@@ -10,6 +10,8 @@ void FillCredentialCombo(HWND combo, ConnectionTreeModel& model, const std::wstr
         return;
     }
 
+    UiTheme::ApplyComboBox(combo);
+
     ComboBox_ResetContent(combo);
     ComboBox_AddString(combo, L"(None)");
     int sel = 0;
@@ -25,10 +27,18 @@ void FillCredentialCombo(HWND combo, ConnectionTreeModel& model, const std::wstr
     const int count = ComboBox_GetCount(combo);
     if (count > 0) {
         ComboBox_SetCurSel(combo, sel);
-        SendMessageW(combo, CB_SETMINVISIBLE, static_cast<WPARAM>(count > 16 ? 16 : count), 0);
+        const WPARAM visible = static_cast<WPARAM>(count > 16 ? 16 : count);
+        SendMessageW(combo, CB_SETMINVISIBLE, visible, 0);
     }
 
-    UiTheme::ApplyComboBox(combo);
+    RECT rc{};
+    GetWindowRect(combo, &rc);
+    const int width = rc.right - rc.left;
+    if (width > 0) {
+        SendMessageW(combo, CB_SETDROPPEDWIDTH, static_cast<WPARAM>(width), 0);
+    }
+
+    UiTheme::ThemeComboDropdownList(combo, true);
     RedrawWindow(combo, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_UPDATENOW);
 }
 

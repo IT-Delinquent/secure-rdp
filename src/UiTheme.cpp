@@ -343,27 +343,13 @@ void EnableDarkModeForHwnd(HWND hwnd) {
     }
 }
 
-void ThemeComboDropdownList(HWND combo) {
-    COMBOBOXINFO cbi{};
-    cbi.cbSize = sizeof(cbi);
-    if (!GetComboBoxInfo(combo, &cbi) || !cbi.hwndList) {
-        return;
-    }
-    EnableDarkModeForHwnd(cbi.hwndList);
-    const wchar_t* theme = UiTheme::IsDarkEffective() ? L"DarkMode_Explorer" : L"Explorer";
-    SetWindowTheme(cbi.hwndList, theme, nullptr);
-    const auto& palette = UiTheme::CurrentPalette();
-    SendMessageW(cbi.hwndList, LB_SETBKCOLOR, 0, static_cast<LPARAM>(palette.treeBackground));
-    SendMessageW(cbi.hwndList, LB_SETTEXTCOLOR, 0, static_cast<LPARAM>(palette.text));
-}
-
 LRESULT CALLBACK ComboSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR) {
     switch (msg) {
         case WM_NCDESTROY:
             RemoveWindowSubclass(hwnd, ComboSubclassProc, kComboSubclassId);
             break;
         case CBN_DROPDOWN:
-            ThemeComboDropdownList(hwnd);
+            UiTheme::ThemeComboDropdownList(hwnd);
             break;
         default:
             break;
@@ -372,6 +358,32 @@ LRESULT CALLBACK ComboSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 }
 
 }  // namespace
+
+void ThemeComboDropdownList(HWND combo, bool ensureListExists) {
+    if (!combo) {
+        return;
+    }
+    COMBOBOXINFO cbi{};
+    cbi.cbSize = sizeof(cbi);
+    if (!GetComboBoxInfo(combo, &cbi) || !cbi.hwndList) {
+        if (!ensureListExists) {
+            return;
+        }
+        SendMessageW(combo, CB_SHOWDROPDOWN, TRUE, 0);
+        SendMessageW(combo, CB_SHOWDROPDOWN, FALSE, 0);
+        cbi = {};
+        cbi.cbSize = sizeof(cbi);
+        if (!GetComboBoxInfo(combo, &cbi) || !cbi.hwndList) {
+            return;
+        }
+    }
+    EnableDarkModeForHwnd(cbi.hwndList);
+    const wchar_t* theme = IsDarkEffective() ? L"DarkMode_Explorer" : L"Explorer";
+    SetWindowTheme(cbi.hwndList, theme, nullptr);
+    const auto& palette = CurrentPalette();
+    SendMessageW(cbi.hwndList, LB_SETBKCOLOR, 0, static_cast<LPARAM>(palette.treeBackground));
+    SendMessageW(cbi.hwndList, LB_SETTEXTCOLOR, 0, static_cast<LPARAM>(palette.text));
+}
 
 void ApplyComboBox(HWND combo) {
     if (!combo) {

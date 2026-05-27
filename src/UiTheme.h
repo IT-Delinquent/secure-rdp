@@ -41,6 +41,7 @@ void PaintMenuBarBand(HWND hwnd);
 void ApplyDialog(HWND hwnd);
 void ApplyRichEdit(HWND richEdit);
 void ApplyComboBox(HWND combo);
+void ThemeComboDropdownList(HWND combo, bool ensureListExists = false);
 bool HandleDialogMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, LRESULT& result);
 void Apply(HWND hwnd);
 void ApplyTree(HWND tree);

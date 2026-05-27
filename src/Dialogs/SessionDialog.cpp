@@ -127,7 +127,6 @@ INT_PTR CALLBACK DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                             reinterpret_cast<HMENU>(IDCANCEL), nullptr, nullptr);
 
             UiTheme::ApplyDialog(hwnd);
-            FillCredentialCombo(st->comboCred, *st->model, cred);
             Layout(hwnd, st);
             SetFocus(st->editName);
             return 0;
@@ -214,12 +213,12 @@ bool ShowSessionDialog(HWND owner, ConnectionTreeModel& model, const TreeNode* e
     CenterWindowOnOwner(dlg, owner, 420, 340);
     SendMessageW(dlg, WM_SIZE, 0, MAKELPARAM(420, 340));
     UiTheme::ApplyDialog(dlg);
+    ShowWindow(dlg, SW_SHOW);
+    UpdateWindow(dlg);
     if (st.comboCred) {
         const std::wstring cred = existing ? existing->credentialId : L"";
         FillCredentialCombo(st.comboCred, model, cred);
     }
-    ShowWindow(dlg, SW_SHOW);
-    UpdateWindow(dlg);
     EnableWindow(owner, FALSE);
 
     RunModalLoop(dlg);
