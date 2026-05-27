@@ -691,6 +691,18 @@ void MainWindow::SetCredentialOnFolder() {
     AssignCredentialToSessions(sessions, dlg.credentialId);
 }
 
+void MainWindow::ExpandCollapseSelectedFolder(bool expand) {
+    const HTREEITEM selected = TreeView_GetSelection(tree_);
+    if (!selected) {
+        return;
+    }
+    TreeNode* node = GetNodeForTreeItem(selected);
+    if (!node || !node->IsFolder()) {
+        return;
+    }
+    TreeView_Expand(tree_, selected, expand ? TVE_EXPAND : TVE_COLLAPSE);
+}
+
 HTREEITEM MainWindow::GetItemForId(const std::wstring& id) const {
     auto it = idToItem_.find(id);
     return it != idToItem_.end() ? it->second : nullptr;
@@ -1031,6 +1043,9 @@ void MainWindow::ShowContextMenu(int screenX, int screenY) {
         addSep();
     }
     if (isFolder) {
+        addItem(IDM_EXPAND_FOLDER, L"Expand");
+        addItem(IDM_COLLAPSE_FOLDER, L"Collapse");
+        addSep();
         addItem(IDM_SET_CREDENTIAL_FOLDER, L"Set Credential...");
         addSep();
     }
@@ -1096,6 +1111,12 @@ void MainWindow::OnCommand(int id) {
             break;
         case IDM_SET_CREDENTIAL_FOLDER:
             SetCredentialOnFolder();
+            break;
+        case IDM_EXPAND_FOLDER:
+            ExpandCollapseSelectedFolder(true);
+            break;
+        case IDM_COLLAPSE_FOLDER:
+            ExpandCollapseSelectedFolder(false);
             break;
         case IDM_THEME_SYSTEM:
             SetThemePreference(UiTheme::ThemePreference::System);
