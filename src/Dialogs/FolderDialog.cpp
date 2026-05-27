@@ -13,7 +13,7 @@
 
 namespace {
 
-constexpr wchar_t kStateProp[] = L"SecureRdpFolderDlgState";
+constexpr wchar_t kStateProp[] = L"TinyRdpFolderDlgState";
 
 struct State {
     FolderDialogResult* result = nullptr;
@@ -134,7 +134,7 @@ bool ShowFolderDialog(HWND owner, const std::wstring& initialName, FolderDialogR
         wc.hInstance = GetModuleHandleW(nullptr);
         wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
         wc.hbrBackground = UiTheme::DialogBackgroundBrush();
-        wc.lpszClassName = L"SecureRdpFolderDlg";
+        wc.lpszClassName = L"TinyRdpFolderDlg";
         RegisterClassExW(&wc);
         registered = true;
     }
@@ -150,7 +150,7 @@ bool ShowFolderDialog(HWND owner, const std::wstring& initialName, FolderDialogR
     const DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
     const DWORD exStyle = WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE;
 
-    HWND dlg = CreateWindowExW(exStyle, L"SecureRdpFolderDlg", L"New Folder", style, 0, 0, 100, 100, owner, nullptr,
+    HWND dlg = CreateWindowExW(exStyle, L"TinyRdpFolderDlg", L"New Folder", style, 0, 0, 100, 100, owner, nullptr,
                                GetModuleHandleW(nullptr), state.get());
     if (!dlg) {
         LOG_ERROR(L"FolderDialog: CreateWindowEx failed: " + Util::FormatWin32Error(GetLastError()));

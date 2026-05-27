@@ -138,13 +138,13 @@ bool MainWindow::RegisterClass(HINSTANCE hInstance) {
     wc.hIcon = LoadIconW(hInstance, MAKEINTRESOURCEW(IDI_APPICON));
     wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
     wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
-    wc.lpszClassName = L"SecureRdpMainWindow";
+    wc.lpszClassName = L"TinyRdpMainWindow";
     wc.hIconSm = wc.hIcon;
     return RegisterClassExW(&wc) != 0;
 }
 
 bool MainWindow::CreateWindowInstance(HINSTANCE hInstance) {
-    hwnd_ = CreateWindowExW(0, L"SecureRdpMainWindow", SECURE_RDP_TITLE, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
+    hwnd_ = CreateWindowExW(0, L"TinyRdpMainWindow", SECURE_RDP_TITLE, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
                             CW_USEDEFAULT, 960, 640, nullptr, nullptr, hInstance, this);
     return hwnd_ != nullptr;
 }

@@ -2,6 +2,7 @@
 
 #include "Logger.h"
 #include "MainWindow.h"
+#include "Util.h"
 
 #include <commctrl.h>
 
@@ -13,7 +14,12 @@ App& App::Instance() {
 bool App::Init(HINSTANCE instance) {
     instance_ = instance;
 
+    std::wstring migrationError;
+    const bool migratedLegacy = Util::MigrateLegacyStorage(migrationError);
     Logger::Init();
+    if (!migratedLegacy) {
+        Logger::Warn(L"Legacy storage migration failed: " + migrationError);
+    }
 
     INITCOMMONCONTROLSEX icc{};
     icc.dwSize = sizeof(icc);

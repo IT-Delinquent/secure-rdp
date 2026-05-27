@@ -1,4 +1,4 @@
-# Secure RDP Connection Manager v1.0.2
+# Tiny RDP Connection Manager v1.0.2
 
 A small native Windows desktop application for organizing Remote Desktop sessions in a folder tree. Passwords are stored in **Windows Credential Manager** (DPAPI-backed); connection data on disk never contains secrets.
 
@@ -13,7 +13,7 @@ A small native Windows desktop application for organizing Remote Desktop session
 | Import / export | [**MSXML 6**](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ms763742(v=vs.85)) (DOM) for mRemoteNG-compatible XML |
 | Secrets | **Windows Credential Manager** (`wincred.h`) — DPAPI-backed profile passwords and `TERMSRV/{host}` entries for RDP |
 | Remote Desktop | **`mstsc.exe`**, temporary `.rdp` launch files (no password fields on disk) |
-| Clipboard | Custom `SecureRdp/NodeV1` format (JSON subtree) via Win32 clipboard APIs |
+| Clipboard | Custom `TinyRdp/NodeV1` format (JSON subtree) via Win32 clipboard APIs |
 | Drag-and-drop | Tree-view reparenting with Common Controls hit-testing |
 | Resources | Windows **`.rc`** resources and embedded **`.ico`** application icon |
 | Dev tooling (optional) | **Python** + **Pillow** — `resources/build_icon.py` regenerates `app.ico` from `app-source-no-background.png` |
@@ -35,11 +35,11 @@ No third-party UI framework, package manager, or runtime beyond the Windows SDK 
 
 ## Security model
 
-- `connections.json` and `credentials.json` under `%AppData%\SecureRdp\` hold structure and non-secret metadata only.
-- Passwords live in Credential Manager targets `SecureRdp/Profile/{uuid}`.
+- `connections.json` and `credentials.json` under `%AppData%\TinyRdp\` hold structure and non-secret metadata only.
+- Passwords live in Credential Manager targets `TinyRdp/Profile/{uuid}`.
 - On connect, credentials are mirrored to `TERMSRV/{host[:port]}` so the built-in RDP client can authenticate (same approach as `cmdkey /generic:TERMSRV/...`).
 - No application-level encryption keys or reversible password storage in project files.
-- Clipboard copy uses format `SecureRdp/NodeV1` (JSON subtree without passwords).
+- Clipboard copy uses format `TinyRdp/NodeV1` (JSON subtree without passwords).
 
 ## Requirements
 
@@ -50,19 +50,19 @@ No third-party UI framework, package manager, or runtime beyond the Windows SDK 
 ## Build
 
 ```powershell
-cd c:\source\secure-rdp
+cd c:\source\tinyrdp
 cmake -B build -G "Visual Studio 17 2022" -A x64
 cmake --build build --config Release
 ```
 
 ## Building with full paths!
 ```powershell
-cd c:\source\secure-rdp
+cd c:\source\tinyrdp
 & "C:\Program Files\CMake\bin\cmake.exe" -B build -G "Visual Studio 17 2022" -A x64
 & "C:\Program Files\CMake\bin\cmake.exe" --build build --config Release
 ```
 
-Output: `build\Release\SecureRdp.exe`
+Output: `build\Release\TinyRdp.exe`
 
 To refresh the branding icon after changing `resources/app-source-no-background.png`:
 
@@ -73,11 +73,11 @@ cmake --build build --config Release
 
 `build_icon.py` centers the visible artwork with uniform padding before resizing, so the title-bar icon is not clipped on one side.
 
-If Explorer still shows a blank/generic icon after rebuilding, clear the Windows icon cache (or open the new `SecureRdp-with-icon.exe` copy) — Explorer caches icons per path.
+If Explorer still shows a blank/generic icon after rebuilding, clear the Windows icon cache (or open the new `TinyRdp-with-icon.exe` copy) — Explorer caches icons per path.
 
 ## Usage
 
-1. Run `SecureRdp.exe`.
+1. Run `TinyRdp.exe`.
 2. Use **File → Manage Credentials** to add username/domain/password profiles.
 3. Create folders and sessions; link a credential in the session editor.
 4. Double-click a session or press **Connect** / Enter to launch fullscreen RDP.
@@ -100,22 +100,22 @@ If Explorer still shows a blank/generic icon after rebuilding, clear the Windows
 
 ## Where RDP session data is stored
 
-All persistent app data lives under **`%AppData%\SecureRdp\`** (Roaming AppData, e.g. `C:\Users\<you>\AppData\Roaming\SecureRdp\`).
+All persistent app data lives under **`%AppData%\TinyRdp\`** (Roaming AppData, e.g. `C:\Users\<you>\AppData\Roaming\TinyRdp\`).
 
 | Location | What is stored |
 |----------|----------------|
-| `%AppData%\SecureRdp\connections.json` | Folder tree and **RDP sessions**: display name, host/IP, port (default 3389), session id, and optional `credentialId` linking to a profile. **No passwords.** |
-| `%AppData%\SecureRdp\credentials.json` | Credential **profiles**: id, label, username, domain. **No passwords.** |
-| Windows Credential Manager — `SecureRdp/Profile/{profile-uuid}` | Password for each credential profile (DPAPI-backed). |
+| `%AppData%\TinyRdp\connections.json` | Folder tree and **RDP sessions**: display name, host/IP, port (default 3389), session id, and optional `credentialId` linking to a profile. **No passwords.** |
+| `%AppData%\TinyRdp\credentials.json` | Credential **profiles**: id, label, username, domain. **No passwords.** |
+| Windows Credential Manager — `TinyRdp/Profile/{profile-uuid}` | Password for each credential profile (DPAPI-backed). |
 | Windows Credential Manager — `TERMSRV/{host}` or `TERMSRV/{host:port}` | Mirrored credentials written when you connect, so `mstsc.exe` can sign in (same idea as `cmdkey /generic:TERMSRV/...`). |
-| `%TEMP%\SecureRdp\{session-id}.rdp` | Short-lived launch file per connect: address, port, fullscreen flags, optional username. **No password fields.** |
-| `%AppData%\SecureRdp\app.log` | Application log (diagnostics only; not session configuration) |
+| `%TEMP%\TinyRdp\{session-id}.rdp` | Short-lived launch file per connect: address, port, fullscreen flags, optional username. **No password fields.** |
+| `%AppData%\TinyRdp\app.log` | Application log (diagnostics only; not session configuration) |
 
-Clipboard copy/paste uses in-memory format `SecureRdp/NodeV1` (JSON subtree, no secrets)—nothing extra is written to disk for that.
+Clipboard copy/paste uses in-memory format `TinyRdp/NodeV1` (JSON subtree, no secrets)—nothing extra is written to disk for that.
 
 ## Logging
 
-The app writes timestamped lines to `%AppData%\SecureRdp\app.log` and to the debugger output (view with [DebugView](https://learn.microsoft.com/en-us/sysinternals/downloads/debugview) or Visual Studio). Log levels: DEBUG, INFO, WARN, ERROR. Unhandled exceptions (including heap corruption) are recorded on crash.
+The app writes timestamped lines to `%AppData%\TinyRdp\app.log` and to the debugger output (view with [DebugView](https://learn.microsoft.com/en-us/sysinternals/downloads/debugview) or Visual Studio). Log levels: DEBUG, INFO, WARN, ERROR. Unhandled exceptions (including heap corruption) are recorded on crash.
 
 ## License
 

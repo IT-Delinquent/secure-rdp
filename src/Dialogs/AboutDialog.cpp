@@ -12,21 +12,21 @@
 
 namespace {
 
-constexpr wchar_t kStateProp[] = L"SecureRdpAboutDlgState";
+constexpr wchar_t kStateProp[] = L"TinyRdpAboutDlgState";
 constexpr int IDC_ABOUT_TEXT = 3401;
 
 std::wstring AboutBody() {
-    std::wstring text = L"Secure RDP Connection Manager ";
+    std::wstring text = L"Tiny RDP Connection Manager ";
     text += SECURE_RDP_VERSION;
     text += L"\r\n\r\nA native Windows desktop application for organizing Remote Desktop sessions in a folder tree.\r\n";
     text += L"Passwords are stored in Windows Credential Manager (DPAPI-backed); connection data on disk never contains secrets.\r\n\r\n";
     text += L"RDP session data is stored in the following locations:\r\n";
-    text += L" - %AppData%\\SecureRdp\\connections.json — folder tree and sessions (name, host, port, credential link; no passwords)\r\n";
-    text += L" - %AppData%\\SecureRdp\\credentials.json — profile labels, usernames, domains (no passwords)\r\n";
-    text += L" - Credential Manager: SecureRdp/Profile/{uuid} — profile passwords\r\n";
+    text += L" - %AppData%\\TinyRdp\\connections.json — folder tree and sessions (name, host, port, credential link; no passwords)\r\n";
+    text += L" - %AppData%\\TinyRdp\\credentials.json — profile labels, usernames, domains (no passwords)\r\n";
+    text += L" - Credential Manager: TinyRdp/Profile/{uuid} — profile passwords\r\n";
     text += L" - Credential Manager: TERMSRV/{host[:port]} — mirrored on connect for mstsc.exe\r\n";
-    text += L" - %TEMP%\\SecureRdp\\{session-id}.rdp — temporary launch files (no password fields)\r\n";
-    text += L" - %AppData%\\SecureRdp\\app.log — diagnostics only\r\n\r\n";
+    text += L" - %TEMP%\\TinyRdp\\{session-id}.rdp — temporary launch files (no password fields)\r\n";
+    text += L" - %AppData%\\TinyRdp\\app.log — diagnostics only\r\n\r\n";
     text += L"Technologies\r\n";
     text += L"  Language: C++17 (MSVC, static CRT in Release)\r\n";
     text += L"  Build: CMake 3.20+, Visual Studio 2022 (x64), Windows SDK\r\n";
@@ -35,7 +35,7 @@ std::wstring AboutBody() {
     text += L"  Import/export: MSXML 6 (mRemoteNG-compatible XML)\r\n";
     text += L"  Secrets: Windows Credential Manager (DPAPI)\r\n";
     text += L"  Remote Desktop: mstsc.exe, temporary .rdp launch files\r\n";
-    text += L"  Clipboard: SecureRdp/NodeV1 format (JSON subtree)\r\n";
+    text += L"  Clipboard: TinyRdp/NodeV1 format (JSON subtree)\r\n";
     text += L"  Drag-and-drop: Tree-view reparenting\r\n";
     text += L"  Resources: Windows .rc resources and embedded .ico icon\r\n";
     return text;
@@ -129,20 +129,20 @@ void ShowAboutDialog(HWND owner) {
         wc.hInstance = GetModuleHandleW(nullptr);
         wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
         wc.hbrBackground = UiTheme::DialogBackgroundBrush();
-        wc.lpszClassName = L"SecureRdpAboutDlg";
+        wc.lpszClassName = L"TinyRdpAboutDlg";
         RegisterClassExW(&wc);
         registered = true;
     }
 
     auto state = std::make_unique<State>();
 
-    std::wstring title = L"About Secure RDP ";
+    std::wstring title = L"About Tiny RDP ";
     title += SECURE_RDP_VERSION;
 
     const DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
     const DWORD exStyle = WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE;
 
-    HWND dlg = CreateWindowExW(exStyle, L"SecureRdpAboutDlg", title.c_str(), style, 0, 0, 100, 100, owner, nullptr,
+    HWND dlg = CreateWindowExW(exStyle, L"TinyRdpAboutDlg", title.c_str(), style, 0, 0, 100, 100, owner, nullptr,
                                GetModuleHandleW(nullptr), state.get());
     if (!dlg) {
         return;

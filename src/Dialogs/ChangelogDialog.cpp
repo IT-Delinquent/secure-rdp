@@ -16,7 +16,7 @@
 
 namespace {
 
-constexpr wchar_t kStateProp[] = L"SecureRdpChangelogDlgState";
+constexpr wchar_t kStateProp[] = L"TinyRdpChangelogDlgState";
 constexpr int IDC_CHANGELOG_TEXT = 3501;
 
 #ifndef MSFTEDIT_CLASS
@@ -377,7 +377,7 @@ void ShowChangelogDialog(HWND owner) {
         wc.hInstance = GetModuleHandleW(nullptr);
         wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
         wc.hbrBackground = UiTheme::DialogBackgroundBrush();
-        wc.lpszClassName = L"SecureRdpChangelogDlg";
+        wc.lpszClassName = L"TinyRdpChangelogDlg";
         RegisterClassExW(&wc);
         registered = true;
     }
@@ -390,7 +390,7 @@ void ShowChangelogDialog(HWND owner) {
     const DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
     const DWORD exStyle = WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE;
 
-    HWND dlg = CreateWindowExW(exStyle, L"SecureRdpChangelogDlg", title.c_str(), style, 0, 0, 100, 100, owner, nullptr,
+    HWND dlg = CreateWindowExW(exStyle, L"TinyRdpChangelogDlg", title.c_str(), style, 0, 0, 100, 100, owner, nullptr,
                                GetModuleHandleW(nullptr), state.get());
     if (!dlg) {
         return;

@@ -166,12 +166,12 @@ bool ShowCredEditDialog(HWND owner, CredEditState& state) {
         wc.hInstance = GetModuleHandleW(nullptr);
         wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
         wc.hbrBackground = UiTheme::DialogBackgroundBrush();
-        wc.lpszClassName = L"SecureRdpCredEditDlg";
+        wc.lpszClassName = L"TinyRdpCredEditDlg";
         RegisterClassExW(&wc);
         registered = true;
     }
 
-    HWND dlg = CreateWindowExW(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE, L"SecureRdpCredEditDlg",
+    HWND dlg = CreateWindowExW(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE, L"TinyRdpCredEditDlg",
                                state.isNew ? L"Add Credential" : L"Edit Credential",
                                WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, 0, 0, 100, 100, owner, nullptr,
                                GetModuleHandleW(nullptr), &state);
@@ -325,7 +325,7 @@ bool ShowCredentialManager(HWND owner, ConnectionTreeModel& model) {
         wc.hInstance = GetModuleHandleW(nullptr);
         wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
         wc.hbrBackground = UiTheme::DialogBackgroundBrush();
-        wc.lpszClassName = L"SecureRdpCredMgr";
+        wc.lpszClassName = L"TinyRdpCredMgr";
         RegisterClassExW(&wc);
         registered = true;
     }
@@ -340,7 +340,7 @@ bool ShowCredentialManager(HWND owner, ConnectionTreeModel& model) {
     const int x = ownerRc.left + (ownerRc.right - ownerRc.left - w) / 2;
     const int y = ownerRc.top + (ownerRc.bottom - ownerRc.top - h) / 2;
 
-    HWND dlg = CreateWindowExW(WS_EX_DLGMODALFRAME, L"SecureRdpCredMgr", L"Credential Profiles",
+    HWND dlg = CreateWindowExW(WS_EX_DLGMODALFRAME, L"TinyRdpCredMgr", L"Credential Profiles",
                                WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, x, y, w, h, owner, nullptr,
                                GetModuleHandleW(nullptr), &st);
     if (!dlg) {

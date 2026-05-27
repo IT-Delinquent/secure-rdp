@@ -14,7 +14,7 @@ std::wstring SettingsPath() {
         return L"";
     }
     std::wstring file = path;
-    file += L"\\SecureRdp\\settings.json";
+    file += L"\\TinyRdp\\settings.json";
     return file;
 }
 
