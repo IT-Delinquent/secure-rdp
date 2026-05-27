@@ -246,6 +246,7 @@ TreeNode* MainWindow::GetNodeForTreeItem(HTREEITEM item) {
 
 void MainWindow::UpdateMenuState(HMENU menu) {
     TreeNode* node = GetSelectedNode();
+    const bool hasNode = node != nullptr;
     const bool hasEditableItem = node && node->id != Model().Root().id;
     const bool isSession = node && node->IsSession();
     const int selectedCount = GetSelectedTreeItemCount();
@@ -259,8 +260,9 @@ void MainWindow::UpdateMenuState(HMENU menu) {
         EnableMenuItem(menu, IDM_CONNECT, isSession && !multiSelect ? enable : disable);
     }
     if (menu == editMenu_) {
+        const bool canEdit = hasNode && !multiSelect;
         const bool singleItemActions = hasEditableItem && !multiSelect;
-        EnableMenuItem(menu, IDM_EDIT, singleItemActions ? enable : disable);
+        EnableMenuItem(menu, IDM_EDIT, canEdit ? enable : disable);
         EnableMenuItem(menu, IDM_DELETE, singleItemActions ? enable : disable);
         EnableMenuItem(menu, IDM_DUPLICATE, singleItemActions ? enable : disable);
         EnableMenuItem(menu, IDM_COPY, singleItemActions ? enable : disable);
@@ -807,7 +809,7 @@ void MainWindow::NewFolder() {
 
 void MainWindow::EditSelected() {
     TreeNode* node = GetSelectedNode();
-    if (!node || node->id == Model().Root().id) {
+    if (!node) {
         return;
     }
     if (node->IsFolder()) {
@@ -1051,13 +1053,15 @@ void MainWindow::ShowContextMenu(int screenX, int screenY) {
     }
     addItem(IDM_NEW_SESSION, L"New Session");
     addItem(IDM_NEW_FOLDER, L"New Folder");
-    if (node && !isRoot) {
+    if (node) {
         addSep();
         addItem(IDM_EDIT, L"Edit");
-        addItem(IDM_DUPLICATE, L"Duplicate");
-        addItem(IDM_DELETE, L"Delete");
-        addSep();
-        addItem(IDM_COPY, L"Copy");
+        if (!isRoot) {
+            addItem(IDM_DUPLICATE, L"Duplicate");
+            addItem(IDM_DELETE, L"Delete");
+            addSep();
+            addItem(IDM_COPY, L"Copy");
+        }
     }
     if (ClipboardManager::HasPasteData()) {
         addItem(IDM_PASTE, L"Paste");
