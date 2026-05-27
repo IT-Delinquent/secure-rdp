@@ -63,22 +63,30 @@ bool RdpLauncher::Connect(const TreeNode& session, std::wstring& error) {
     std::wstring rdpUsername;
     if (!session.credentialId.empty()) {
         const CredentialMeta* meta = model_.FindCredential(session.credentialId);
-        CredentialSecrets secrets;
-        if (!vault_.LoadProfile(session.credentialId, secrets, error)) {
-            return false;
-        }
-        if (meta) {
-            if (!meta->domain.empty()) {
-                secrets.domain = meta->domain;
+        if (!vault_.HasProfile(session.credentialId)) {
+            // Metadata can remain when users remove the password from Credential Manager.
+            // Allow launch and let MSTSC prompt for credentials.
+            if (meta) {
+                rdpUsername = CredentialVault::BuildUsernameForRdp(meta->username, meta->domain);
             }
-            if (!meta->username.empty()) {
-                secrets.username = meta->username;
+        } else {
+            CredentialSecrets secrets;
+            if (!vault_.LoadProfile(session.credentialId, secrets, error)) {
+                return false;
             }
-        }
-        rdpUsername = CredentialVault::BuildUsernameForRdp(secrets.username, secrets.domain);
-        const std::wstring addr = FullAddress(session);
-        if (!vault_.SyncToTermsrv(addr, secrets.username, secrets.domain, secrets.password, error)) {
-            return false;
+            if (meta) {
+                if (!meta->domain.empty()) {
+                    secrets.domain = meta->domain;
+                }
+                if (!meta->username.empty()) {
+                    secrets.username = meta->username;
+                }
+            }
+            rdpUsername = CredentialVault::BuildUsernameForRdp(secrets.username, secrets.domain);
+            const std::wstring addr = FullAddress(session);
+            if (!vault_.SyncToTermsrv(addr, secrets.username, secrets.domain, secrets.password, error)) {
+                return false;
+            }
         }
     }
 
