@@ -5,3 +5,5 @@
 *.suo
 CMakeCache.txt
 CMakeFiles/
+/.build-revision
+/src/BuildVersion.h

@@ -54,6 +54,11 @@ State* GetState(HWND hwnd) {
 }
 
 INT_PTR CALLBACK DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    LRESULT themeResult = 0;
+    if (UiTheme::HandleDialogMessages(hwnd, msg, wParam, lParam, themeResult)) {
+        return themeResult;
+    }
+
     State* st = GetState(hwnd);
     switch (msg) {
         case WM_CREATE: {
@@ -75,7 +80,7 @@ INT_PTR CALLBACK DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                             reinterpret_cast<HMENU>(static_cast<INT_PTR>(IDOK)), nullptr, nullptr);
             CreateWindowExW(0, L"BUTTON", L"Cancel", WS_CHILD | WS_VISIBLE, 0, 0, 10, 10, hwnd,
                             reinterpret_cast<HMENU>(static_cast<INT_PTR>(IDCANCEL)), nullptr, nullptr);
-            UiTheme::Apply(hwnd);
+            UiTheme::ApplyDialog(hwnd);
             Layout(hwnd, st);
             SetFocus(st->editName);
             return 0;
@@ -128,7 +133,7 @@ bool ShowFolderDialog(HWND owner, const std::wstring& initialName, FolderDialogR
         wc.lpfnWndProc = DlgProc;
         wc.hInstance = GetModuleHandleW(nullptr);
         wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
-        wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
+        wc.hbrBackground = UiTheme::DialogBackgroundBrush();
         wc.lpszClassName = L"SecureRdpFolderDlg";
         RegisterClassExW(&wc);
         registered = true;
@@ -155,6 +160,8 @@ bool ShowFolderDialog(HWND owner, const std::wstring& initialName, FolderDialogR
     state.release();
 
     CenterWindowOnOwner(dlg, owner, 380, 140);
+    SendMessageW(dlg, WM_SIZE, 0, MAKELPARAM(380, 140));
+    UiTheme::ApplyDialog(dlg);
     ShowWindow(dlg, SW_SHOW);
     UpdateWindow(dlg);
     EnableWindow(owner, FALSE);

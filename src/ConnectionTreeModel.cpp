@@ -224,3 +224,13 @@ bool ConnectionTreeModel::RemoveCredential(const std::wstring& id) {
     credentials_.erase(it, credentials_.end());
     return true;
 }
+
+void ConnectionTreeModel::CollectSessions(const TreeNode& folder, bool recursive, std::vector<TreeNode*>& out) {
+    for (const auto& child : folder.children) {
+        if (child->IsSession()) {
+            out.push_back(child.get());
+        } else if (recursive && child->IsFolder()) {
+            CollectSessions(*child, true, out);
+        }
+    }
+}

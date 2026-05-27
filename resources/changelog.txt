@@ -1,0 +1,13 @@
+[1.0.1] - 2026-05-26
+
+Added
+- Bulk credential assignment for multi-selected sessions and from folder context ("Set Credential..." with direct children or subtree scope).
+- File menu Changelog to view release notes in the app.
+- Alt+right-click range selection for sessions (folders in the span are skipped).
+- File menu Theme: System default, Light, or Dark (follows Windows when System is selected).
+
+Fixed
+- Session, folder, and credential dialogs: Save/Cancel buttons no longer clipped; layout refreshes after the window is sized.
+- Plain left-click now clears a previous multi-selection correctly.
+- Credential selector in assignment flows refreshes correctly without opening "Manage..." first.
+- Window title no longer includes the version number (version remains in About and the status bar).
