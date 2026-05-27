@@ -1212,6 +1212,14 @@ LRESULT CALLBACK MainWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
             }
             return 0;
         }
+        case WM_GETMINMAXINFO: {
+            auto* mmi = reinterpret_cast<MINMAXINFO*>(lParam);
+            if (mmi) {
+                mmi->ptMinTrackSize.x = 200;
+                mmi->ptMinTrackSize.y = 200;
+            }
+            return 0;
+        }
         case WM_COMMAND:
             if (HIWORD(wParam) == 0) {
                 self->OnCommand(LOWORD(wParam));
