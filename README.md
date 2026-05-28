@@ -12,6 +12,24 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/mharwooduk/tinyrdp/actions/workflows/build.yml">
+    <img src="https://github.com/mharwooduk/tinyrdp/actions/workflows/build.yml/badge.svg?branch=main" alt="Build Status">
+  </a>
+  <a href="https://github.com/mharwooduk/tinyrdp/releases">
+    <img src="https://img.shields.io/github/v/release/mharwooduk/tinyrdp?display_name=tag" alt="Latest Release">
+  </a>
+  <a href="https://github.com/mharwooduk/tinyrdp/issues">
+    <img src="https://img.shields.io/github/issues/mharwooduk/tinyrdp" alt="Open Issues">
+  </a>
+  <a href="https://github.com/mharwooduk/tinyrdp/stargazers">
+    <img src="https://img.shields.io/github/stars/mharwooduk/tinyrdp?style=social" alt="GitHub Stars">
+  </a>
+  <a href="https://github.com/mharwooduk/tinyrdp/network/members">
+    <img src="https://img.shields.io/github/forks/mharwooduk/tinyrdp?style=social" alt="GitHub Forks">
+  </a>
+</p>
+
+<p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/platform-Windows%2010%2F11-0078D6" alt="Platform: Windows 10/11">
   <img src="https://img.shields.io/badge/language-C%2B%2B17-00599C" alt="Language: C++17">
