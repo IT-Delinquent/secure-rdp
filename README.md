@@ -87,6 +87,14 @@ If Explorer still shows a blank/generic icon after rebuilding, clear the Windows
 8. Use **File -> Changelog...** for in-app release notes and **File -> Theme** to switch appearance.
 9. Use **File -> Import** / **Export** for mRemoteNG-compatible XML (`.xml`). Import merges into the selected folder (or the root). Non-RDP protocols are skipped on import; passwords from mRemoteNG files are not imported (they are encrypted in that format)—set passwords in **Manage Credentials** after import.
 
+## Example mRemoteNG export XML
+
+An example export file generated in the current TinyRdp-compatible format is included at:
+
+- `examples/mremoteng-export-example.xml`
+
+You can import this file directly via **File -> Import...** to test the importer and use it as a template for creating additional mRemoteNG-compatible XML files.
+
 ## Keyboard shortcuts
 
 | Key | Action |
