@@ -1,54 +1,73 @@
-# Tiny RDP Connection Manager v1.0.2
+![TinyRdp Social Preview](docs/images/tinyrdp-opengraph.png)
 
-A small native Windows desktop application for organizing Remote Desktop sessions in a folder tree. Passwords are stored in **Windows Credential Manager** (DPAPI-backed); connection data on disk never contains secrets.
+<p align="center">
+  <img src="docs/images/tinyrdp-icon.png" alt="TinyRdp icon" width="96" height="96" />
+</p>
 
-## Application screenshot
+<h1 align="center">Tiny RDP Connection Manager</h1>
+
+<p align="center">
+  Native Windows RDP session manager with folder organization,<br/>
+  credential profiles, and mRemoteNG XML import/export.
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/platform-Windows%2010%2F11-0078D6" alt="Platform: Windows 10/11">
+  <img src="https://img.shields.io/badge/language-C%2B%2B17-00599C" alt="Language: C++17">
+  <img src="https://img.shields.io/badge/build-CMake%20%2B%20MSVC-0C7BDC" alt="Build: CMake + MSVC">
+</p>
+
+## Screenshot
 
 ![Tiny RDP Manager screenshot](docs/images/app-screenshot.png)
 
-## Technologies
+## Why TinyRdp
 
-| Area | Stack |
-|------|--------|
-| Language | **C++17** (MSVC, `/W4`, static CRT in Release) |
-| Build | **CMake** 3.20+, **Visual Studio 2022** (x64), Windows SDK |
-| UI | **Win32** API — Common Controls (tree view, toolbar), modal dialogs, **uxtheme** for visual styles |
-| Persistence | **JSON** on disk (`connections.json`, `credentials.json`) via vendored [**nlohmann/json**](https://github.com/nlohmann/json) |
-| Import / export | [**MSXML 6**](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ms763742(v=vs.85)) (DOM) for mRemoteNG-compatible XML |
-| Secrets | **Windows Credential Manager** (`wincred.h`) — DPAPI-backed profile passwords and `TERMSRV/{host}` entries for RDP |
-| Remote Desktop | **`mstsc.exe`**, temporary `.rdp` launch files (no password fields on disk) |
-| Clipboard | Custom `TinyRdp/NodeV1` format (JSON subtree) via Win32 clipboard APIs |
-| Drag-and-drop | Tree-view reparenting with Common Controls hit-testing |
-| Resources | Windows **`.rc`** resources and embedded **`.ico`** application icon |
-| Dev tooling (optional) | **Python** + **Pillow** — `resources/build_icon.py` regenerates `app.ico` from `app-source-no-background.png` |
-
-No third-party UI framework, package manager, or runtime beyond the Windows SDK and the single header-only JSON dependency in `external/`.
+- Folder-based RDP organization with drag-and-drop, duplicate, copy, and paste.
+- Credential profiles stored in Windows Credential Manager (DPAPI-backed).
+- Bulk credential assignment for multi-selected sessions and folder scopes.
+- mRemoteNG-compatible XML import/export for migration and interoperability.
+- Lightweight native Win32 app with no heavy framework dependency.
 
 ## Features
 
 - Tree view with folders and RDP sessions (name, host/IP, port default 3389)
 - Reusable credential profiles linked to sessions
 - Bulk credential assignment for multi-selected sessions and folder scopes
-- Launch sessions in **fullscreen** via `mstsc.exe` (separate process)
+- Launch sessions in fullscreen via `mstsc.exe` (separate process)
 - Drag-and-drop reparenting, copy/paste, duplicate
-- Import and export connections in **mRemoteNG XML** format (folders and RDP sessions)
+- Import and export connections in mRemoteNG XML format (folders and RDP sessions)
 - Inline rename (F2 / slow double-click on label)
-- Built-in changelog dialog (**File -> Changelog...**)
-- Theme selection (**File -> Theme -> System/Light/Dark**)
+- Built-in changelog dialog (`File -> Changelog...`)
+- Theme selection (`File -> Theme -> System/Light/Dark`)
 - Menus and context menu
 
-## Security model
+## Tech Stack
 
-- `connections.json` and `credentials.json` under `%AppData%\TinyRdp\` hold structure and non-secret metadata only.
-- Passwords live in Credential Manager targets `TinyRdp/Profile/{uuid}`.
-- On connect, credentials are mirrored to `TERMSRV/{host[:port]}` so the built-in RDP client can authenticate (same approach as `cmdkey /generic:TERMSRV/...`).
-- No application-level encryption keys or reversible password storage in project files.
-- Clipboard copy uses format `TinyRdp/NodeV1` (JSON subtree without passwords).
+| Area | Stack |
+|------|--------|
+| Language | **C++17** (MSVC, `/W4`, static CRT in Release) |
+| Build | **CMake** 3.20+, **Visual Studio 2022** (x64), Windows SDK |
+| UI | **Win32** API, Common Controls, modal dialogs, `uxtheme` |
+| Persistence | **JSON** via vendored [**nlohmann/json**](https://github.com/nlohmann/json) |
+| Import / export | **MSXML 6** DOM for mRemoteNG-compatible XML |
+| Secrets | **Windows Credential Manager** (`wincred.h`) |
+| RDP launch | `mstsc.exe` + temporary `.rdp` files |
+| Icon tooling | Python + Pillow (`resources/build_icon.py`) |
+
+## Security Model
+
+- `connections.json` and `credentials.json` under `%AppData%\TinyRdp\` hold metadata only.
+- Passwords are saved in Credential Manager targets `TinyRdp/Profile/{uuid}`.
+- On connect, credentials are mirrored to `TERMSRV/{host[:port]}` for `mstsc.exe`.
+- No app-level encryption keys or reversible password blobs in project files.
+- Clipboard transfer uses `TinyRdp/NodeV1` JSON subtree format without passwords.
 
 ## Requirements
 
 - Windows 10 or 11 (x64)
-- Visual Studio 2022 **or** Build Tools with “Desktop development with C++”
+- Visual Studio 2022 or Build Tools with Desktop C++
 - CMake 3.20+
 
 ## Build
@@ -59,47 +78,32 @@ cmake -B build -G "Visual Studio 17 2022" -A x64
 cmake --build build --config Release
 ```
 
-## Building with full paths!
+Output: `build\Release\TinyRdp.exe`
+
+### Full path variant
+
 ```powershell
 cd c:\source\tinyrdp
 & "C:\Program Files\CMake\bin\cmake.exe" -B build -G "Visual Studio 17 2022" -A x64
 & "C:\Program Files\CMake\bin\cmake.exe" --build build --config Release
 ```
 
-Output: `build\Release\TinyRdp.exe`
-
-To refresh the branding icon after changing `resources/app-source-no-background.png`:
-
-```powershell
-python resources/build_icon.py
-cmake --build build --config Release
-```
-
-`build_icon.py` centers the visible artwork with uniform padding before resizing, so the title-bar icon is not clipped on one side.
-
-If Explorer still shows a blank/generic icon after rebuilding, clear the Windows icon cache (or open the new `TinyRdp-with-icon.exe` copy) — Explorer caches icons per path.
-
 ## Usage
 
 1. Run `TinyRdp.exe`.
-2. Use **File → Manage Credentials** to add username/domain/password profiles.
+2. Open `File -> Manage Credentials` to add profile username/domain/password.
 3. Create folders and sessions; link a credential in the session editor.
-4. Double-click a session or press **Connect** / Enter to launch fullscreen RDP.
-5. For bulk updates, multi-select sessions (Ctrl+click) and use **Set Credential...**.
-6. Use folder context **Set Credential...** for direct children or the full subtree.
-7. Drag items to reorganize; **Ctrl+C** / **Ctrl+V** to copy/paste subtrees; **Duplicate** from the Edit menu.
-8. Use **File -> Changelog...** for in-app release notes and **File -> Theme** to switch appearance.
-9. Use **File -> Import** / **Export** for mRemoteNG-compatible XML (`.xml`). Import merges into the selected folder (or the root). Non-RDP protocols are skipped on import; passwords from mRemoteNG files are not imported (they are encrypted in that format)—set passwords in **Manage Credentials** after import.
+4. Connect by double-click, pressing `Enter`, or using `Connect`.
+5. Use `Set Credential...` for bulk assignment on selected sessions/folders.
+6. Use `File -> Import` / `File -> Export` for mRemoteNG XML.
 
-## Example mRemoteNG export XML
-
-An example export file generated in the current TinyRdp-compatible format is included at:
+## Example mRemoteNG Export XML
 
 - `examples/mremoteng-export-example.xml`
 
-You can import this file directly via **File -> Import...** to test the importer and use it as a template for creating additional mRemoteNG-compatible XML files.
+Import this file with `File -> Import...` to test your importer and use it as a template for larger exports.
 
-## Keyboard shortcuts
+## Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
@@ -110,25 +114,26 @@ You can import this file directly via **File -> Import...** to test the importer
 | Alt+Right-click | Range-select visible sessions |
 | F5 | Refresh tree view |
 
-## Where RDP session data is stored
+## Data Locations
 
-All persistent app data lives under **`%AppData%\TinyRdp\`** (Roaming AppData, e.g. `C:\Users\<you>\AppData\Roaming\TinyRdp\`).
+All persistent app data is under `%AppData%\TinyRdp\`.
 
 | Location | What is stored |
 |----------|----------------|
-| `%AppData%\TinyRdp\connections.json` | Folder tree and **RDP sessions**: display name, host/IP, port (default 3389), session id, and optional `credentialId` linking to a profile. **No passwords.** |
-| `%AppData%\TinyRdp\credentials.json` | Credential **profiles**: id, label, username, domain. **No passwords.** |
-| Windows Credential Manager — `TinyRdp/Profile/{profile-uuid}` | Password for each credential profile (DPAPI-backed). |
-| Windows Credential Manager — `TERMSRV/{host}` or `TERMSRV/{host:port}` | Mirrored credentials written when you connect, so `mstsc.exe` can sign in (same idea as `cmdkey /generic:TERMSRV/...`). |
-| `%TEMP%\TinyRdp\{session-id}.rdp` | Short-lived launch file per connect: address, port, fullscreen flags, optional username. **No password fields.** |
-| `%AppData%\TinyRdp\app.log` | Application log (diagnostics only; not session configuration) |
+| `%AppData%\TinyRdp\connections.json` | Folder tree and RDP sessions metadata (no passwords) |
+| `%AppData%\TinyRdp\credentials.json` | Credential profile metadata (no passwords) |
+| Credential Manager `TinyRdp/Profile/{profile-uuid}` | Profile password (DPAPI-backed) |
+| Credential Manager `TERMSRV/{host}` / `TERMSRV/{host:port}` | Mirrored credentials for `mstsc.exe` |
+| `%TEMP%\TinyRdp\{session-id}.rdp` | Temporary launch file (no password field) |
+| `%AppData%\TinyRdp\app.log` | Diagnostics log |
 
-Clipboard copy/paste uses in-memory format `TinyRdp/NodeV1` (JSON subtree, no secrets)—nothing extra is written to disk for that.
+## Branding Assets
 
-## Logging
-
-The app writes timestamped lines to `%AppData%\TinyRdp\app.log` and to the debugger output (view with [DebugView](https://learn.microsoft.com/en-us/sysinternals/downloads/debugview) or Visual Studio). Log levels: DEBUG, INFO, WARN, ERROR. Unhandled exceptions (including heap corruption) are recorded on crash.
+- App icon source: `docs/images/tinyrdp-icon.png`
+- Open Graph/social preview image: `docs/images/tinyrdp-opengraph.png`
+- Screenshot: `docs/images/app-screenshot.png`
+- Generated Windows icon (`.ico`): `resources/app.ico`
 
 ## License
 
-Provided as-is for local use.
+This project is licensed under the [MIT License](LICENSE).
