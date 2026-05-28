@@ -214,13 +214,12 @@ void SetSelectionFormat(HWND richEdit, bool bold, int heightTwips, COLORREF text
     cf.crTextColor = textColor;
     SendMessageW(richEdit, EM_SETCHARFORMAT, SCF_SELECTION, reinterpret_cast<LPARAM>(&cf));
 
-    if (startIndentTwips > 0) {
-        PARAFORMAT2 pf{};
-        pf.cbSize = sizeof(pf);
-        pf.dwMask = PFM_STARTINDENT;
-        pf.dxStartIndent = startIndentTwips;
-        SendMessageW(richEdit, EM_SETPARAFORMAT, SCF_SELECTION, reinterpret_cast<LPARAM>(&pf));
-    }
+    PARAFORMAT2 pf{};
+    pf.cbSize = sizeof(pf);
+    pf.dwMask = PFM_STARTINDENT;
+    // Always set indentation so bullet formatting does not leak into later lines.
+    pf.dxStartIndent = startIndentTwips > 0 ? startIndentTwips : 0;
+    SendMessageW(richEdit, EM_SETPARAFORMAT, SCF_SELECTION, reinterpret_cast<LPARAM>(&pf));
 }
 
 void AppendLine(HWND richEdit, const std::wstring& text, bool bold, int heightTwips, COLORREF textColor,

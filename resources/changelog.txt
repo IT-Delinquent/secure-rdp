@@ -19,6 +19,7 @@ Fixed
 - Connecting no longer fails with "Element not found" when a linked credential password entry is deleted from Credential Manager.
 - builder.ps1 now auto-recovers from stale CMake cache/source path mismatches.
 - Changelog version updated to 1.0.2.release.
+- Changelog formatting to remove extra indentations
 
 [1.0.1.release] - 2026-05-27
 
