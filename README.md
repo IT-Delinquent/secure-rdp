@@ -12,9 +12,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/mharwooduk/tinyrdp/actions/workflows/build.yml">
-    <img src="https://github.com/mharwooduk/tinyrdp/actions/workflows/build.yml/badge.svg?branch=main" alt="Build Status">
-  </a>
   <a href="https://github.com/mharwooduk/tinyrdp/releases">
     <img src="https://img.shields.io/github/v/release/mharwooduk/tinyrdp?display_name=tag" alt="Latest Release">
   </a>
