@@ -16,10 +16,34 @@ std::vector<BYTE> PasswordBlob(const std::wstring& password) {
     return blob;
 }
 
+std::wstring LegacyProfileTarget(const std::wstring& profileId) {
+    return L"SecureRdp/Profile/" + profileId;
+}
+
+bool ReadGenericCredential(const std::wstring& target, PCREDENTIALW* cred) {
+    return CredReadW(target.c_str(), CRED_TYPE_GENERIC, 0, cred) != FALSE;
+}
+
+bool WriteGenericCredential(const std::wstring& target, const CREDENTIALW& source, std::wstring& error) {
+    CREDENTIALW copy{};
+    copy.Type = CRED_TYPE_GENERIC;
+    copy.TargetName = const_cast<LPWSTR>(target.c_str());
+    copy.UserName = source.UserName;
+    copy.CredentialBlobSize = source.CredentialBlobSize;
+    copy.CredentialBlob = source.CredentialBlob;
+    copy.Comment = source.Comment;
+    copy.Persist = source.Persist;
+    if (!CredWriteW(&copy, 0)) {
+        error = Util::FormatWin32Error(GetLastError());
+        return false;
+    }
+    return true;
+}
+
 }  // namespace
 
 std::wstring CredentialVault::ProfileTarget(const std::wstring& profileId) {
-    return L"SecureRdp/Profile/" + profileId;
+    return L"TinyRdp/Profile/" + profileId;
 }
 
 std::wstring CredentialVault::TermsrvTarget(const std::wstring& fullAddress) {
@@ -62,9 +86,25 @@ bool CredentialVault::SaveProfile(const std::wstring& profileId, const std::wstr
 bool CredentialVault::LoadProfile(const std::wstring& profileId, CredentialSecrets& secrets, std::wstring& error) {
     const std::wstring target = ProfileTarget(profileId);
     PCREDENTIALW cred = nullptr;
-    if (!CredReadW(target.c_str(), CRED_TYPE_GENERIC, 0, &cred)) {
-        error = Util::FormatWin32Error(GetLastError());
-        return false;
+    if (!ReadGenericCredential(target, &cred)) {
+        const DWORD err = GetLastError();
+        if (err != ERROR_NOT_FOUND) {
+            error = Util::FormatWin32Error(err);
+            return false;
+        }
+
+        const std::wstring legacyTarget = LegacyProfileTarget(profileId);
+        if (!ReadGenericCredential(legacyTarget, &cred)) {
+            error = Util::FormatWin32Error(GetLastError());
+            return false;
+        }
+
+        std::wstring migrateError;
+        if (!WriteGenericCredential(target, *cred, migrateError)) {
+            CredFree(cred);
+            error = L"Failed to migrate legacy credential: " + migrateError;
+            return false;
+        }
     }
 
     secrets.username = cred->UserName ? cred->UserName : L"";
@@ -88,22 +128,27 @@ bool CredentialVault::LoadProfile(const std::wstring& profileId, CredentialSecre
 }
 
 bool CredentialVault::DeleteProfile(const std::wstring& profileId, std::wstring& error) {
-    const std::wstring target = ProfileTarget(profileId);
-    if (!CredDeleteW(target.c_str(), CRED_TYPE_GENERIC, 0)) {
-        const DWORD err = GetLastError();
-        if (err == ERROR_NOT_FOUND) {
-            return true;
+    const std::vector<std::wstring> targets = {ProfileTarget(profileId), LegacyProfileTarget(profileId)};
+    for (const auto& target : targets) {
+        if (!CredDeleteW(target.c_str(), CRED_TYPE_GENERIC, 0)) {
+            const DWORD err = GetLastError();
+            if (err == ERROR_NOT_FOUND) {
+                continue;
+            }
+            error = Util::FormatWin32Error(err);
+            return false;
         }
-        error = Util::FormatWin32Error(err);
-        return false;
     }
     return true;
 }
 
 bool CredentialVault::HasProfile(const std::wstring& profileId) {
-    const std::wstring target = ProfileTarget(profileId);
     PCREDENTIALW cred = nullptr;
-    const bool ok = CredReadW(target.c_str(), CRED_TYPE_GENERIC, 0, &cred) != FALSE;
+    if (ReadGenericCredential(ProfileTarget(profileId), &cred)) {
+        CredFree(cred);
+        return true;
+    }
+    const bool ok = ReadGenericCredential(LegacyProfileTarget(profileId), &cred);
     if (cred) {
         CredFree(cred);
     }

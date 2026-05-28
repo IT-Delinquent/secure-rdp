@@ -2,7 +2,7 @@
 #include <verrsrc.h>
 #include "../src/BuildVersion.h"
 
-// ID 1 = primary application icon (shown on SecureRdp.exe in Explorer).
+// ID 1 = primary application icon (shown on TinyRdp.exe in Explorer).
 #define IDI_APPICON 1
 #define IDR_CHANGELOG 101
 
@@ -25,12 +25,12 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "CompanyName", "SecureRdp"
-            VALUE "FileDescription", "Secure RDP Connection Manager"
+            VALUE "CompanyName", "TinyRdp"
+            VALUE "FileDescription", "Tiny RDP Connection Manager"
             VALUE "FileVersion", SECURE_RDP_FILE_VERSION_STR
-            VALUE "InternalName", "SecureRdp"
-            VALUE "OriginalFilename", "SecureRdp.exe"
-            VALUE "ProductName", "Secure RDP Connection Manager"
+            VALUE "InternalName", "TinyRdp"
+            VALUE "OriginalFilename", "TinyRdp.exe"
+            VALUE "ProductName", "Tiny RDP Connection Manager"
             VALUE "ProductVersion", SECURE_RDP_FILE_VERSION_STR
         END
     END

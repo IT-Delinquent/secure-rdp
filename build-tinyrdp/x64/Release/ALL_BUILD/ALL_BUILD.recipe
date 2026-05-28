@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>C:\source\tinyrdp\build-tinyrdp\x64\Release\ZERO_CHECK</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\source\tinyrdp\build-tinyrdp\x64\Release\update_build_version</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\source\tinyrdp\build-tinyrdp\Release\TinyRdp.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\source\tinyrdp\build-tinyrdp\x64\Release\ALL_BUILD</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles />
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>

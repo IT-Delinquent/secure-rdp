@@ -1,0 +1,20 @@
+^C:\SOURCE\TINYRDP\BUILD-TINYRDP\CMAKEFILES\4BC3D982FC4EBFA9321B9BEB4ACFA73B\UPDATE_BUILD_VERSION.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -DCOUNTER_FILE=C:/source/tinyrdp/.build-revision -DOUTPUT_HEADER=C:/source/tinyrdp/src/BuildVersion.h -DVERSION_MAJOR=1 -DVERSION_MINOR=0 -DVERSION_PATCH=2 -P C:/source/tinyrdp/cmake/UpdateBuildVersion.cmake
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\SOURCE\TINYRDP\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/source/tinyrdp -BC:/source/tinyrdp/build-tinyrdp --check-stamp-file C:/source/tinyrdp/build-tinyrdp/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

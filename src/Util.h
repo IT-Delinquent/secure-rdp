@@ -11,6 +11,7 @@ std::wstring GetAppDataDir();
 std::wstring GetConnectionsPath();
 std::wstring GetCredentialsMetaPath();
 std::wstring GetTempRdpDir();
+bool MigrateLegacyStorage(std::wstring& error);
 
 std::wstring Utf8ToWide(const std::string& utf8);
 std::string WideToUtf8(const std::wstring& wide);

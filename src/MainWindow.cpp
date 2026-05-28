@@ -138,13 +138,13 @@ bool MainWindow::RegisterClass(HINSTANCE hInstance) {
     wc.hIcon = LoadIconW(hInstance, MAKEINTRESOURCEW(IDI_APPICON));
     wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
     wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
-    wc.lpszClassName = L"SecureRdpMainWindow";
+    wc.lpszClassName = L"TinyRdpMainWindow";
     wc.hIconSm = wc.hIcon;
     return RegisterClassExW(&wc) != 0;
 }
 
 bool MainWindow::CreateWindowInstance(HINSTANCE hInstance) {
-    hwnd_ = CreateWindowExW(0, L"SecureRdpMainWindow", SECURE_RDP_TITLE, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
+    hwnd_ = CreateWindowExW(0, L"TinyRdpMainWindow", SECURE_RDP_TITLE, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
                             CW_USEDEFAULT, 960, 640, nullptr, nullptr, hInstance, this);
     return hwnd_ != nullptr;
 }
@@ -246,6 +246,7 @@ TreeNode* MainWindow::GetNodeForTreeItem(HTREEITEM item) {
 
 void MainWindow::UpdateMenuState(HMENU menu) {
     TreeNode* node = GetSelectedNode();
+    const bool hasNode = node != nullptr;
     const bool hasEditableItem = node && node->id != Model().Root().id;
     const bool isSession = node && node->IsSession();
     const int selectedCount = GetSelectedTreeItemCount();
@@ -259,8 +260,9 @@ void MainWindow::UpdateMenuState(HMENU menu) {
         EnableMenuItem(menu, IDM_CONNECT, isSession && !multiSelect ? enable : disable);
     }
     if (menu == editMenu_) {
+        const bool canEdit = hasNode && !multiSelect;
         const bool singleItemActions = hasEditableItem && !multiSelect;
-        EnableMenuItem(menu, IDM_EDIT, singleItemActions ? enable : disable);
+        EnableMenuItem(menu, IDM_EDIT, canEdit ? enable : disable);
         EnableMenuItem(menu, IDM_DELETE, singleItemActions ? enable : disable);
         EnableMenuItem(menu, IDM_DUPLICATE, singleItemActions ? enable : disable);
         EnableMenuItem(menu, IDM_COPY, singleItemActions ? enable : disable);
@@ -691,6 +693,18 @@ void MainWindow::SetCredentialOnFolder() {
     AssignCredentialToSessions(sessions, dlg.credentialId);
 }
 
+void MainWindow::ExpandCollapseSelectedFolder(bool expand) {
+    const HTREEITEM selected = TreeView_GetSelection(tree_);
+    if (!selected) {
+        return;
+    }
+    TreeNode* node = GetNodeForTreeItem(selected);
+    if (!node || !node->IsFolder()) {
+        return;
+    }
+    TreeView_Expand(tree_, selected, expand ? TVE_EXPAND : TVE_COLLAPSE);
+}
+
 HTREEITEM MainWindow::GetItemForId(const std::wstring& id) const {
     auto it = idToItem_.find(id);
     return it != idToItem_.end() ? it->second : nullptr;
@@ -795,7 +809,7 @@ void MainWindow::NewFolder() {
 
 void MainWindow::EditSelected() {
     TreeNode* node = GetSelectedNode();
-    if (!node || node->id == Model().Root().id) {
+    if (!node) {
         return;
     }
     if (node->IsFolder()) {
@@ -1031,18 +1045,23 @@ void MainWindow::ShowContextMenu(int screenX, int screenY) {
         addSep();
     }
     if (isFolder) {
+        addItem(IDM_EXPAND_FOLDER, L"Expand");
+        addItem(IDM_COLLAPSE_FOLDER, L"Collapse");
+        addSep();
         addItem(IDM_SET_CREDENTIAL_FOLDER, L"Set Credential...");
         addSep();
     }
     addItem(IDM_NEW_SESSION, L"New Session");
     addItem(IDM_NEW_FOLDER, L"New Folder");
-    if (node && !isRoot) {
+    if (node) {
         addSep();
         addItem(IDM_EDIT, L"Edit");
-        addItem(IDM_DUPLICATE, L"Duplicate");
-        addItem(IDM_DELETE, L"Delete");
-        addSep();
-        addItem(IDM_COPY, L"Copy");
+        if (!isRoot) {
+            addItem(IDM_DUPLICATE, L"Duplicate");
+            addItem(IDM_DELETE, L"Delete");
+            addSep();
+            addItem(IDM_COPY, L"Copy");
+        }
     }
     if (ClipboardManager::HasPasteData()) {
         addItem(IDM_PASTE, L"Paste");
@@ -1096,6 +1115,12 @@ void MainWindow::OnCommand(int id) {
             break;
         case IDM_SET_CREDENTIAL_FOLDER:
             SetCredentialOnFolder();
+            break;
+        case IDM_EXPAND_FOLDER:
+            ExpandCollapseSelectedFolder(true);
+            break;
+        case IDM_COLLAPSE_FOLDER:
+            ExpandCollapseSelectedFolder(false);
             break;
         case IDM_THEME_SYSTEM:
             SetThemePreference(UiTheme::ThemePreference::System);
@@ -1184,6 +1209,14 @@ LRESULT CALLBACK MainWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
             self->LayoutControls(w, h);
             if (UiTheme::IsDarkEffective()) {
                 UiTheme::PaintMenuBarBand(hwnd);
+            }
+            return 0;
+        }
+        case WM_GETMINMAXINFO: {
+            auto* mmi = reinterpret_cast<MINMAXINFO*>(lParam);
+            if (mmi) {
+                mmi->ptMinTrackSize.x = 200;
+                mmi->ptMinTrackSize.y = 200;
             }
             return 0;
         }

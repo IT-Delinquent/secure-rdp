@@ -15,7 +15,7 @@
 
 namespace {
 
-constexpr wchar_t kStateProp[] = L"SecureRdpAssignCredDlgState";
+constexpr wchar_t kStateProp[] = L"TinyRdpAssignCredDlgState";
 constexpr int IDC_ASSIGN_LABEL = 3601;
 constexpr int IDC_ASSIGN_CRED = 3602;
 constexpr int IDC_ASSIGN_MANAGE = 3603;
@@ -162,7 +162,7 @@ bool ShowAssignCredentialDialog(HWND owner, ConnectionTreeModel& model, int sess
         wc.hInstance = GetModuleHandleW(nullptr);
         wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
         wc.hbrBackground = UiTheme::DialogBackgroundBrush();
-        wc.lpszClassName = L"SecureRdpAssignCredDlg";
+        wc.lpszClassName = L"TinyRdpAssignCredDlg";
         RegisterClassExW(&wc);
         registered = true;
     }
@@ -175,7 +175,7 @@ bool ShowAssignCredentialDialog(HWND owner, ConnectionTreeModel& model, int sess
     state->model = &model;
     state->sessionCount = sessionCount;
 
-    HWND dlg = CreateWindowExW(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE, L"SecureRdpAssignCredDlg",
+    HWND dlg = CreateWindowExW(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE, L"TinyRdpAssignCredDlg",
                                L"Set Credential", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, 0, 0, 100, 100, owner, nullptr,
                                GetModuleHandleW(nullptr), state.get());
     if (!dlg) {

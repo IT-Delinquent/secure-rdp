@@ -12,7 +12,7 @@
 
 namespace {
 
-constexpr wchar_t kStateProp[] = L"SecureRdpFolderScopeDlgState";
+constexpr wchar_t kStateProp[] = L"TinyRdpFolderScopeDlgState";
 
 struct State {
     std::wstring folderName;
@@ -140,7 +140,7 @@ FolderScopeChoice ShowFolderScopeDialog(HWND owner, const std::wstring& folderNa
         wc.hInstance = GetModuleHandleW(nullptr);
         wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
         wc.hbrBackground = UiTheme::DialogBackgroundBrush();
-        wc.lpszClassName = L"SecureRdpFolderScopeDlg";
+        wc.lpszClassName = L"TinyRdpFolderScopeDlg";
         RegisterClassExW(&wc);
         registered = true;
     }
@@ -148,7 +148,7 @@ FolderScopeChoice ShowFolderScopeDialog(HWND owner, const std::wstring& folderNa
     State state;
     state.folderName = folderName;
 
-    HWND dlg = CreateWindowExW(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE, L"SecureRdpFolderScopeDlg", L"Set Credential",
+    HWND dlg = CreateWindowExW(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE, L"TinyRdpFolderScopeDlg", L"Set Credential",
                                WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, 0, 0, 100, 100, owner, nullptr,
                                GetModuleHandleW(nullptr), &state);
     if (!dlg) {

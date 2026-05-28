@@ -55,6 +55,7 @@ private:
     void ExportConnections();
     void SetCredentialOnSelected();
     void SetCredentialOnFolder();
+    void ExpandCollapseSelectedFolder(bool expand);
     void AssignCredentialToSessions(const std::vector<TreeNode*>& sessions, const std::wstring& credentialId);
     void ShowContextMenu(int screenX, int screenY);
     void UpdateMenuState(HMENU menu);

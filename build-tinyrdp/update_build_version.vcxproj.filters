@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\source\tinyrdp\build-tinyrdp\CMakeFiles\4bc3d982fc4ebfa9321b9beb4acfa73b\update_build_version.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\source\tinyrdp\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\source\tinyrdp\build-tinyrdp\CMakeFiles\update_build_version" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{C26274C5-BEDB-3E46-B8C6-94BB7ED26F97}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

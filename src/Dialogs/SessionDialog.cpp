@@ -193,7 +193,7 @@ bool ShowSessionDialog(HWND owner, ConnectionTreeModel& model, const TreeNode* e
         wc.hInstance = GetModuleHandleW(nullptr);
         wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
         wc.hbrBackground = UiTheme::DialogBackgroundBrush();
-        wc.lpszClassName = L"SecureRdpSessionDlg";
+        wc.lpszClassName = L"TinyRdpSessionDlg";
         RegisterClassExW(&wc);
         registered = true;
     }
@@ -203,7 +203,7 @@ bool ShowSessionDialog(HWND owner, ConnectionTreeModel& model, const TreeNode* e
     st.model = &model;
     st.existing = existing;
 
-    HWND dlg = CreateWindowExW(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE, L"SecureRdpSessionDlg",
+    HWND dlg = CreateWindowExW(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE, L"TinyRdpSessionDlg",
                                existing ? L"Edit Session" : L"New Session", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, 0, 0,
                                100, 100, owner, nullptr, GetModuleHandleW(nullptr), &st);
     if (!dlg) {

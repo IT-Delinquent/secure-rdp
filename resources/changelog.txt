@@ -1,4 +1,27 @@
-[1.0.1] - 2026-05-26
+[1.0.2.release] - 2026-05-28
+
+Added
+- Renamed/rebranded to TinyRdp with migration for legacy SecureRdp storage and credential target prefixes.
+- Folder context menu actions for Expand and Collapse.
+- Live drag-and-drop destination highlighting for folder drop targets.
+- GitHub Actions build workflow for Windows CMake/MSVC builds.
+- Example mRemoteNG export template at examples/mremoteng-export-example.xml.
+- README upgrades: screenshot, icon assets, and Open Graph image.
+- MIT LICENSE file.
+
+Changed
+- Main window now enforces a minimum size of 200x200.
+- Root Connections folder can be renamed (1-32 chars, alphanumeric only).
+- Drag/drop rules updated: root cannot be dragged, but items can be dropped onto root.
+- README build guidance cleaned up (removed build script/icon-tool focus from the main flow).
+
+Fixed
+- Connecting no longer fails with "Element not found" when a linked credential password entry is deleted from Credential Manager.
+- builder.ps1 now auto-recovers from stale CMake cache/source path mismatches.
+- Changelog version updated to 1.0.2.release.
+- Changelog formatting to remove extra indentations
+
+[1.0.1.release] - 2026-05-27
 
 Added
 - Bulk credential assignment for multi-selected sessions and from folder context ("Set Credential..." with direct children or subtree scope).

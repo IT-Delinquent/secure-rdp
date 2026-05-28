@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(SecureRdp VERSION 1.0.1 LANGUAGES CXX RC)
+project(TinyRdp VERSION 1.0.2 LANGUAGES CXX RC)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -55,8 +55,8 @@ add_custom_target(update_build_version ALL
     VERBATIM
 )
 
-add_executable(SecureRdp WIN32 ${SOURCES})
-add_dependencies(SecureRdp update_build_version)
+add_executable(TinyRdp WIN32 ${SOURCES})
+add_dependencies(TinyRdp update_build_version)
 
 # Rebuild resources when the icon changes.
 set_source_files_properties(resources/app.rc PROPERTIES
@@ -64,12 +64,12 @@ set_source_files_properties(resources/app.rc PROPERTIES
 )
 set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} /I\"${CMAKE_CURRENT_SOURCE_DIR}/resources\"")
 
-target_include_directories(SecureRdp PRIVATE
+target_include_directories(TinyRdp PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/external
 )
 
-target_link_libraries(SecureRdp PRIVATE
+target_link_libraries(TinyRdp PRIVATE
     comctl32
     credui
     shell32
@@ -82,16 +82,16 @@ target_link_libraries(SecureRdp PRIVATE
 )
 
 if(MSVC)
-    target_link_options(SecureRdp PRIVATE
+    target_link_options(TinyRdp PRIVATE
         /MANIFEST:NO
         $<$<CONFIG:Release>:/LTCG>
     )
-    set_target_properties(SecureRdp PROPERTIES
+    set_target_properties(TinyRdp PROPERTIES
         LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS /ENTRY:wWinMainCRTStartup"
     )
 endif()
 
-set_target_properties(SecureRdp PROPERTIES
-    OUTPUT_NAME "SecureRdp"
+set_target_properties(TinyRdp PROPERTIES
+    OUTPUT_NAME "TinyRdp"
     WIN32_EXECUTABLE TRUE
 )

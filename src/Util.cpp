@@ -6,10 +6,35 @@
 
 #include <algorithm>
 #include <sstream>
+#include <vector>
 
 #pragma comment(lib, "shlwapi.lib")
 
 namespace Util {
+
+namespace {
+
+std::wstring BuildAppDataSubdir(const wchar_t* leaf) {
+    wchar_t path[MAX_PATH]{};
+    if (FAILED(SHGetFolderPathW(nullptr, CSIDL_APPDATA, nullptr, SHGFP_TYPE_CURRENT, path))) {
+        return L"";
+    }
+    return std::wstring(path) + L"\\" + leaf;
+}
+
+std::wstring BuildTempSubdir(const wchar_t* leaf) {
+    wchar_t temp[MAX_PATH]{};
+    if (GetTempPathW(MAX_PATH, temp) == 0) {
+        return L"";
+    }
+    return std::wstring(temp) + leaf;
+}
+
+bool PathExists(const std::wstring& path) {
+    return !path.empty() && PathFileExistsW(path.c_str()) != FALSE;
+}
+
+}  // namespace
 
 std::wstring NewUuid() {
     UUID uuid{};
@@ -28,11 +53,7 @@ std::wstring NewUuid() {
 }
 
 std::wstring GetAppDataDir() {
-    wchar_t path[MAX_PATH]{};
-    if (FAILED(SHGetFolderPathW(nullptr, CSIDL_APPDATA, nullptr, SHGFP_TYPE_CURRENT, path))) {
-        return L"";
-    }
-    std::wstring dir = std::wstring(path) + L"\\SecureRdp";
+    std::wstring dir = BuildAppDataSubdir(L"TinyRdp");
     EnsureDirectory(dir);
     return dir;
 }
@@ -46,13 +67,47 @@ std::wstring GetCredentialsMetaPath() {
 }
 
 std::wstring GetTempRdpDir() {
-    wchar_t temp[MAX_PATH]{};
-    if (GetTempPathW(MAX_PATH, temp) == 0) {
-        return L"";
-    }
-    std::wstring dir = std::wstring(temp) + L"SecureRdp";
+    std::wstring dir = BuildTempSubdir(L"TinyRdp");
     EnsureDirectory(dir);
     return dir;
+}
+
+bool MigrateLegacyStorage(std::wstring& error) {
+    error.clear();
+
+    const std::wstring oldAppDir = BuildAppDataSubdir(L"SecureRdp");
+    const std::wstring newAppDir = BuildAppDataSubdir(L"TinyRdp");
+    if (newAppDir.empty()) {
+        error = L"Failed to resolve %AppData% path.";
+        return false;
+    }
+    EnsureDirectory(newAppDir);
+
+    if (PathExists(oldAppDir)) {
+        const std::vector<std::wstring> files = {L"connections.json", L"credentials.json", L"settings.json", L"app.log"};
+        for (const auto& file : files) {
+            const std::wstring oldPath = oldAppDir + L"\\" + file;
+            const std::wstring newPath = newAppDir + L"\\" + file;
+            if (!PathExists(oldPath) || PathExists(newPath)) {
+                continue;
+            }
+            if (!MoveFileExW(oldPath.c_str(), newPath.c_str(), MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH)) {
+                error = L"Failed migrating " + file + L": " + FormatWin32Error(GetLastError());
+                return false;
+            }
+        }
+    }
+
+    const std::wstring oldTempDir = BuildTempSubdir(L"SecureRdp");
+    const std::wstring newTempDir = BuildTempSubdir(L"TinyRdp");
+    const bool newTempExists = PathExists(newTempDir);
+    if (PathExists(oldTempDir) && !newTempExists) {
+        if (!MoveFileExW(oldTempDir.c_str(), newTempDir.c_str(), MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH)) {
+            error = L"Failed migrating temp directory: " + FormatWin32Error(GetLastError());
+            return false;
+        }
+    }
+    return true;
 }
 
 std::wstring Utf8ToWide(const std::string& utf8) {

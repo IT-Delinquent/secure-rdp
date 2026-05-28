@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mrng:Connections xmlns:mrng="http://mremoteng.org" Name="Connections" Export="false" EncryptionEngine="AES" BlockCipherMode="GCM" KdfIterations="1000" FullFileEncryption="false" Protected="" ConfVersion="2.6">
+    <Node Name="Production" Type="Container">
+        <Node Name="PROD-CORE-APP01" Type="Connection" Protocol="RDP" Hostname="10.20.1.11" Port="3389" Username="prod.ops" Domain="" Password="" />
+        <Node Name="PROD-CORE-APP02" Type="Connection" Protocol="RDP" Hostname="10.20.1.12" Port="3389" Username="prod.ops" Domain="" Password="" />
+        <Node Name="PROD-CORE-APP03" Type="Connection" Protocol="RDP" Hostname="10.20.1.13" Port="3389" Username="prod.ops" Domain="" Password="" />
+
+        <Node Name="Houston" Type="Container">
+            <Node Name="HOU-GATEWAY-01" Type="Connection" Protocol="RDP" Hostname="10.20.10.10" Port="3389" Username="hou.admin" Domain="" Password="" />
+            <Node Name="HOU-JUMP-01" Type="Connection" Protocol="RDP" Hostname="10.20.10.20" Port="3389" Username="hou.admin" Domain="" Password="" />
+            <Node Name="HOU-MONITOR-01" Type="Connection" Protocol="RDP" Hostname="10.20.10.30" Port="3389" Username="hou.admin" Domain="" Password="" />
+
+            <Node Name="Main Office" Type="Container">
+                <Node Name="HOU-MO-DC01" Type="Connection" Protocol="RDP" Hostname="10.20.11.11" Port="3389" Username="hou.office" Domain="" Password="" />
+                <Node Name="HOU-MO-APP01" Type="Connection" Protocol="RDP" Hostname="10.20.11.21" Port="3389" Username="hou.office" Domain="" Password="" />
+                <Node Name="HOU-MO-SQL01" Type="Connection" Protocol="RDP" Hostname="10.20.11.31" Port="3389" Username="hou.office" Domain="" Password="" />
+            </Node>
+
+            <Node Name="Disaster Recovery" Type="Container">
+                <Node Name="HOU-DR-DC01" Type="Connection" Protocol="RDP" Hostname="10.20.12.11" Port="3389" Username="hou.dr" Domain="" Password="" />
+                <Node Name="HOU-DR-APP01" Type="Connection" Protocol="RDP" Hostname="10.20.12.21" Port="3389" Username="hou.dr" Domain="" Password="" />
+                <Node Name="HOU-DR-BKP01" Type="Connection" Protocol="RDP" Hostname="10.20.12.31" Port="3389" Username="hou.dr" Domain="" Password="" />
+            </Node>
+        </Node>
+
+        <Node Name="London" Type="Container">
+            <Node Name="LON-GATEWAY-01" Type="Connection" Protocol="RDP" Hostname="10.20.20.10" Port="3389" Username="lon.admin" Domain="" Password="" />
+            <Node Name="LON-JUMP-01" Type="Connection" Protocol="RDP" Hostname="10.20.20.20" Port="3389" Username="lon.admin" Domain="" Password="" />
+            <Node Name="LON-MONITOR-01" Type="Connection" Protocol="RDP" Hostname="10.20.20.30" Port="3389" Username="lon.admin" Domain="" Password="" />
+
+            <Node Name="Canary Wharf Office" Type="Container">
+                <Node Name="LON-CW-DC01" Type="Connection" Protocol="RDP" Hostname="10.20.21.11" Port="3389" Username="lon.office" Domain="" Password="" />
+                <Node Name="LON-CW-APP01" Type="Connection" Protocol="RDP" Hostname="10.20.21.21" Port="3389" Username="lon.office" Domain="" Password="" />
+                <Node Name="LON-CW-SQL01" Type="Connection" Protocol="RDP" Hostname="10.20.21.31" Port="3389" Username="lon.office" Domain="" Password="" />
+            </Node>
+
+            <Node Name="Data Centre" Type="Container">
+                <Node Name="LON-DC-HV01" Type="Connection" Protocol="RDP" Hostname="10.20.22.11" Port="3389" Username="lon.dc" Domain="" Password="" />
+                <Node Name="LON-DC-APP01" Type="Connection" Protocol="RDP" Hostname="10.20.22.21" Port="3389" Username="lon.dc" Domain="" Password="" />
+                <Node Name="LON-DC-SQL01" Type="Connection" Protocol="RDP" Hostname="10.20.22.31" Port="3389" Username="lon.dc" Domain="" Password="" />
+            </Node>
+
+            <Node Name="AWS" Type="Container">
+                <Node Name="LON-AWS-BASTION01" Type="Connection" Protocol="RDP" Hostname="10.20.23.11" Port="3389" Username="lon.aws" Domain="" Password="" />
+                <Node Name="LON-AWS-APP01" Type="Connection" Protocol="RDP" Hostname="10.20.23.21" Port="3389" Username="lon.aws" Domain="" Password="" />
+                <Node Name="LON-AWS-WORKER01" Type="Connection" Protocol="RDP" Hostname="10.20.23.31" Port="3389" Username="lon.aws" Domain="" Password="" />
+            </Node>
+        </Node>
+
+        <Node Name="Singapore" Type="Container">
+            <Node Name="SG-GATEWAY-01" Type="Connection" Protocol="RDP" Hostname="10.20.30.10" Port="3389" Username="sg.admin" Domain="" Password="" />
+            <Node Name="SG-JUMP-01" Type="Connection" Protocol="RDP" Hostname="10.20.30.20" Port="3389" Username="sg.admin" Domain="" Password="" />
+            <Node Name="SG-MONITOR-01" Type="Connection" Protocol="RDP" Hostname="10.20.30.30" Port="3389" Username="sg.admin" Domain="" Password="" />
+
+            <Node Name="Main Site" Type="Container">
+                <Node Name="SG-MS-DC01" Type="Connection" Protocol="RDP" Hostname="10.20.31.11" Port="3389" Username="sg.main" Domain="" Password="" />
+                <Node Name="SG-MS-APP01" Type="Connection" Protocol="RDP" Hostname="10.20.31.21" Port="3389" Username="sg.main" Domain="" Password="" />
+                <Node Name="SG-MS-SQL01" Type="Connection" Protocol="RDP" Hostname="10.20.31.31" Port="3389" Username="sg.main" Domain="" Password="" />
+            </Node>
+
+            <Node Name="Deprecated Site" Type="Container">
+                <Node Name="SG-DEP-LEGACY01" Type="Connection" Protocol="RDP" Hostname="10.20.32.11" Port="3389" Username="sg.legacy" Domain="" Password="" />
+                <Node Name="SG-DEP-LEGACY02" Type="Connection" Protocol="RDP" Hostname="10.20.32.21" Port="3389" Username="sg.legacy" Domain="" Password="" />
+                <Node Name="SG-DEP-ARCHIVE01" Type="Connection" Protocol="RDP" Hostname="10.20.32.31" Port="3389" Username="sg.legacy" Domain="" Password="" />
+            </Node>
+        </Node>
+    </Node>
+
+    <Node Name="Sandbox" Type="Container">
+        <Node Name="SBOX-JUMP-01" Type="Connection" Protocol="RDP" Hostname="10.40.1.10" Port="3389" Username="sandbox.user" Domain="" Password="" />
+        <Node Name="SBOX-APP-01" Type="Connection" Protocol="RDP" Hostname="10.40.1.20" Port="3389" Username="sandbox.user" Domain="" Password="" />
+        <Node Name="SBOX-DB-01" Type="Connection" Protocol="RDP" Hostname="10.40.1.30" Port="3389" Username="sandbox.user" Domain="" Password="" />
+    </Node>
+</mrng:Connections>

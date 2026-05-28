@@ -13,13 +13,25 @@
 
 namespace {
 
-constexpr wchar_t kStateProp[] = L"SecureRdpFolderDlgState";
+constexpr wchar_t kStateProp[] = L"TinyRdpFolderDlgState";
 
 struct State {
     FolderDialogResult* result = nullptr;
     std::wstring initial;
     HWND editName = nullptr;
 };
+
+bool IsAlphaNumericOnly(const std::wstring& name) {
+    if (name.empty() || name.size() > 32) {
+        return false;
+    }
+    for (wchar_t ch : name) {
+        if (!((ch >= L'0' && ch <= L'9') || (ch >= L'A' && ch <= L'Z') || (ch >= L'a' && ch <= L'z'))) {
+            return false;
+        }
+    }
+    return true;
+}
 
 void Layout(HWND hwnd, const State* st) {
     RECT rc{};
@@ -76,6 +88,7 @@ INT_PTR CALLBACK DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                                            WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 0, 0, 10, 10, hwnd,
                                            reinterpret_cast<HMENU>(static_cast<INT_PTR>(IDC_FOLDER_NAME)), nullptr,
                                            nullptr);
+            SendMessageW(st->editName, EM_SETLIMITTEXT, 32, 0);
             CreateWindowExW(0, L"BUTTON", L"Create", WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON, 0, 0, 10, 10, hwnd,
                             reinterpret_cast<HMENU>(static_cast<INT_PTR>(IDOK)), nullptr, nullptr);
             CreateWindowExW(0, L"BUTTON", L"Cancel", WS_CHILD | WS_VISIBLE, 0, 0, 10, 10, hwnd,
@@ -92,8 +105,13 @@ INT_PTR CALLBACK DlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             if (LOWORD(wParam) == IDOK && st && st->result) {
                 wchar_t buf[512]{};
                 GetWindowTextW(st->editName, buf, 512);
-                st->result->name = buf;
-                st->result->accepted = !st->result->name.empty();
+                st->result->name = Util::Trim(buf);
+                if (!IsAlphaNumericOnly(st->result->name)) {
+                    MessageBoxW(hwnd, L"Folder name must be 1-32 characters and use letters/numbers only.",
+                                L"Folder", MB_ICONWARNING);
+                    return 0;
+                }
+                st->result->accepted = true;
                 LOG_INFO(L"FolderDialog: accepted name=" + st->result->name);
                 DestroyWindow(hwnd);
                 return 0;
@@ -134,7 +152,7 @@ bool ShowFolderDialog(HWND owner, const std::wstring& initialName, FolderDialogR
         wc.hInstance = GetModuleHandleW(nullptr);
         wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
         wc.hbrBackground = UiTheme::DialogBackgroundBrush();
-        wc.lpszClassName = L"SecureRdpFolderDlg";
+        wc.lpszClassName = L"TinyRdpFolderDlg";
         RegisterClassExW(&wc);
         registered = true;
     }
@@ -150,7 +168,7 @@ bool ShowFolderDialog(HWND owner, const std::wstring& initialName, FolderDialogR
     const DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
     const DWORD exStyle = WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE;
 
-    HWND dlg = CreateWindowExW(exStyle, L"SecureRdpFolderDlg", L"New Folder", style, 0, 0, 100, 100, owner, nullptr,
+    HWND dlg = CreateWindowExW(exStyle, L"TinyRdpFolderDlg", L"New Folder", style, 0, 0, 100, 100, owner, nullptr,
                                GetModuleHandleW(nullptr), state.get());
     if (!dlg) {
         LOG_ERROR(L"FolderDialog: CreateWindowEx failed: " + Util::FormatWin32Error(GetLastError()));

@@ -22,13 +22,13 @@ void Logger::Init() {
     }
     g_logPath = Util::GetAppDataDir() + L"\\app.log";
     g_initialized = true;
-    Write(LogLevel::Info, L"=== Secure RDP started ===");
+    Write(LogLevel::Info, L"=== Tiny RDP started ===");
 }
 
 void Logger::Shutdown() {
     std::lock_guard lock(g_mutex);
     if (g_initialized) {
-        Write(LogLevel::Info, L"=== Secure RDP exiting ===");
+        Write(LogLevel::Info, L"=== Tiny RDP exiting ===");
         g_initialized = false;
     }
 }

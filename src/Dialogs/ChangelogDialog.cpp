@@ -16,7 +16,7 @@
 
 namespace {
 
-constexpr wchar_t kStateProp[] = L"SecureRdpChangelogDlgState";
+constexpr wchar_t kStateProp[] = L"TinyRdpChangelogDlgState";
 constexpr int IDC_CHANGELOG_TEXT = 3501;
 
 #ifndef MSFTEDIT_CLASS
@@ -52,7 +52,7 @@ bool StartsWith(const std::wstring& s, const wchar_t* prefix) {
 }
 
 bool ParseVersionLine(const std::wstring& line, std::wstring& version, std::wstring& date) {
-    // [1.0.1] - 2026-05-26  or  ## [1.0.1] - 2026-05-26
+    // [1.0.2] - 2026-05-26  or  ## [1.0.2] - 2026-05-26
     std::wstring trimmed = Trim(line);
     if (trimmed.empty()) {
         return false;
@@ -214,13 +214,12 @@ void SetSelectionFormat(HWND richEdit, bool bold, int heightTwips, COLORREF text
     cf.crTextColor = textColor;
     SendMessageW(richEdit, EM_SETCHARFORMAT, SCF_SELECTION, reinterpret_cast<LPARAM>(&cf));
 
-    if (startIndentTwips > 0) {
-        PARAFORMAT2 pf{};
-        pf.cbSize = sizeof(pf);
-        pf.dwMask = PFM_STARTINDENT;
-        pf.dxStartIndent = startIndentTwips;
-        SendMessageW(richEdit, EM_SETPARAFORMAT, SCF_SELECTION, reinterpret_cast<LPARAM>(&pf));
-    }
+    PARAFORMAT2 pf{};
+    pf.cbSize = sizeof(pf);
+    pf.dwMask = PFM_STARTINDENT;
+    // Always set indentation so bullet formatting does not leak into later lines.
+    pf.dxStartIndent = startIndentTwips > 0 ? startIndentTwips : 0;
+    SendMessageW(richEdit, EM_SETPARAFORMAT, SCF_SELECTION, reinterpret_cast<LPARAM>(&pf));
 }
 
 void AppendLine(HWND richEdit, const std::wstring& text, bool bold, int heightTwips, COLORREF textColor,
@@ -377,7 +376,7 @@ void ShowChangelogDialog(HWND owner) {
         wc.hInstance = GetModuleHandleW(nullptr);
         wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
         wc.hbrBackground = UiTheme::DialogBackgroundBrush();
-        wc.lpszClassName = L"SecureRdpChangelogDlg";
+        wc.lpszClassName = L"TinyRdpChangelogDlg";
         RegisterClassExW(&wc);
         registered = true;
     }
@@ -390,7 +389,7 @@ void ShowChangelogDialog(HWND owner) {
     const DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
     const DWORD exStyle = WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE;
 
-    HWND dlg = CreateWindowExW(exStyle, L"SecureRdpChangelogDlg", title.c_str(), style, 0, 0, 100, 100, owner, nullptr,
+    HWND dlg = CreateWindowExW(exStyle, L"TinyRdpChangelogDlg", title.c_str(), style, 0, 0, 100, 100, owner, nullptr,
                                GetModuleHandleW(nullptr), state.get());
     if (!dlg) {
         return;
