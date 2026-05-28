@@ -2,6 +2,10 @@
 
 A small native Windows desktop application for organizing Remote Desktop sessions in a folder tree. Passwords are stored in **Windows Credential Manager** (DPAPI-backed); connection data on disk never contains secrets.
 
+## Application screenshot
+
+![Tiny RDP Manager screenshot](docs/images/app-screenshot.png)
+
 ## Technologies
 
 | Area | Stack |
