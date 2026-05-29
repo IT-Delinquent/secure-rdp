@@ -1,5 +1,7 @@
 /build/
 /out/
+/vcpkg/
+/vcpkg_installed/
 /.vs/
 *.user
 *.suo

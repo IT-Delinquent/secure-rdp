@@ -1,0 +1,7 @@
+TinyRdp bundles or links third-party software:
+
+FreeRDP (Apache License 2.0)
+  https://github.com/FreeRDP/FreeRDP
+
+nlohmann/json (MIT License)
+  https://github.com/nlohmann/json

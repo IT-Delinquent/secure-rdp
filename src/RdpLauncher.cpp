@@ -11,10 +11,11 @@
 namespace {
 
 std::wstring FullAddress(const TreeNode& session) {
-    if (session.port == 3389) {
-        return session.host;
+    const Util::SessionEndpoint endpoint = Util::NormalizeSessionEndpoint(session.host, session.port);
+    if (endpoint.port == 3389) {
+        return endpoint.host;
     }
-    return session.host + L":" + std::to_wstring(session.port);
+    return endpoint.host + L":" + std::to_wstring(endpoint.port);
 }
 
 std::wstring RdpFilePath(const std::wstring& sessionId) {
@@ -55,7 +56,8 @@ bool RdpLauncher::Connect(const TreeNode& session, std::wstring& error) {
         error = L"Not an RDP session.";
         return false;
     }
-    if (!Util::IsValidHost(session.host)) {
+    const Util::SessionEndpoint endpoint = Util::NormalizeSessionEndpoint(session.host, session.port);
+    if (!Util::IsValidHost(endpoint.host)) {
         error = L"Invalid hostname.";
         return false;
     }

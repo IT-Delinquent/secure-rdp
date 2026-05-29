@@ -5,6 +5,8 @@
 #include "Util.h"
 
 #include <commctrl.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
 App& App::Instance() {
     static App app;
@@ -21,9 +23,14 @@ bool App::Init(HINSTANCE instance) {
         Logger::Warn(L"Legacy storage migration failed: " + migrationError);
     }
 
+    WSADATA wsa{};
+    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
+        Logger::Warn(L"WSAStartup failed; embedded RDP networking may not work.");
+    }
+
     INITCOMMONCONTROLSEX icc{};
     icc.dwSize = sizeof(icc);
-    icc.dwICC = ICC_WIN95_CLASSES | ICC_BAR_CLASSES | ICC_TREEVIEW_CLASSES;
+    icc.dwICC = ICC_WIN95_CLASSES | ICC_BAR_CLASSES | ICC_TREEVIEW_CLASSES | ICC_TAB_CLASSES;
     InitCommonControlsEx(&icc);
 
     std::wstring error;
@@ -55,6 +62,7 @@ void App::Shutdown() {
         Logger::Error(L"Shutdown save failed: " + error);
     }
     Logger::Shutdown();
+    WSACleanup();
 }
 
 bool App::Save(std::wstring& error) {

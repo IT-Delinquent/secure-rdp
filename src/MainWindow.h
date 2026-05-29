@@ -3,6 +3,7 @@
 #include "ConnectionTreeModel.h"
 #include "DragDrop.h"
 #include "RdpLauncher.h"
+#include "RdpSessionManager.h"
 #include "UiTheme.h"
 
 #include <memory>
@@ -37,6 +38,7 @@ private:
     bool CreateWindowInstance(HINSTANCE instance);
     void CreateControls();
     void LayoutControls(int width, int height);
+    void DeferredLayout();
     void CreateMenus();
     void PopulateTree(const TreeNode& node, HTREEITEM parent);
     HTREEITEM InsertTreeItem(const TreeNode& node, HTREEITEM parent);
@@ -71,6 +73,12 @@ private:
     void ApplyTheme();
     void SetThemePreference(UiTheme::ThemePreference preference);
     void UpdateThemeMenuChecks();
+    void SaveAppSettings();
+    int GetSplitX(int clientWidth) const;
+    void BeginSplitterDrag(int x);
+    void UpdateSplitterDrag(int x, int clientWidth);
+    void EndSplitterDrag(int clientWidth);
+    bool IsSplitterHit(int x, int y, int clientHeight) const;
 
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
     static LRESULT CALLBACK TreeInputSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, UINT_PTR id,
@@ -80,6 +88,7 @@ private:
 
     HWND hwnd_ = nullptr;
     HWND tree_ = nullptr;
+    HWND panelHost_ = nullptr;
     HINSTANCE hInstance_ = nullptr;
     HIMAGELIST imageList_ = nullptr;
     HMENU fileMenu_ = nullptr;
@@ -93,6 +102,10 @@ private:
     std::unordered_map<std::wstring, HTREEITEM> idToItem_;
     DragDropController dragDrop_;
     std::unique_ptr<RdpLauncher> launcher_;
+    RdpSessionManager sessionManager_;
+    double panelSplitRatio_ = 0.35;
+    int splitDragX_ = -1;
+    bool splitterDragging_ = false;
 
     static MainWindow* s_instance;
 };

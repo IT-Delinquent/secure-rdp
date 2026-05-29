@@ -5,6 +5,7 @@
 #include <shlwapi.h>
 
 #include <algorithm>
+#include <cwctype>
 #include <sstream>
 #include <vector>
 
@@ -145,6 +146,26 @@ bool EnsureDirectory(const std::wstring& path) {
     }
     return SHCreateDirectoryExW(nullptr, path.c_str(), nullptr) == ERROR_SUCCESS ||
            GetLastError() == ERROR_ALREADY_EXISTS;
+}
+
+SessionEndpoint NormalizeSessionEndpoint(const std::wstring& hostField, int portField) {
+    SessionEndpoint endpoint;
+    endpoint.host = Trim(hostField);
+    endpoint.port = portField > 0 ? portField : 3389;
+
+    const size_t colon = endpoint.host.rfind(L':');
+    if (colon == std::wstring::npos || colon == 0) {
+        return endpoint;
+    }
+
+    const std::wstring tail = endpoint.host.substr(colon + 1);
+    if (tail.empty() || !std::all_of(tail.begin(), tail.end(), [](wchar_t ch) { return std::iswdigit(ch); })) {
+        return endpoint;
+    }
+
+    endpoint.host = Trim(endpoint.host.substr(0, colon));
+    endpoint.port = std::stoi(tail);
+    return endpoint;
 }
 
 bool IsValidHost(const std::wstring& host) {

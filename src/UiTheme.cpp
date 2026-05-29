@@ -536,6 +536,27 @@ void ApplyTree(HWND tree) {
     InvalidateRect(tree, nullptr, TRUE);
 }
 
+void ApplyTabControl(HWND tab) {
+    if (!tab) {
+        return;
+    }
+    if (IsDarkEffective()) {
+        SetWindowTheme(tab, L"DarkMode_Explorer", nullptr);
+    } else {
+        SetWindowTheme(tab, L"Explorer", nullptr);
+    }
+    SendMessageW(tab, WM_SETFONT, reinterpret_cast<WPARAM>(AcquireFont()), TRUE);
+    InvalidateRect(tab, nullptr, TRUE);
+}
+
+void ApplyPanelHost(HWND host) {
+    if (!host) {
+        return;
+    }
+    SendMessageW(host, WM_SETFONT, reinterpret_cast<WPARAM>(AcquireFont()), TRUE);
+    InvalidateRect(host, nullptr, TRUE);
+}
+
 void ApplyMenuColors(HMENU menu) {
     if (!menu) {
         return;
@@ -571,10 +592,12 @@ void RedrawMenus(HWND hwnd) {
     }
 }
 
-void ApplyMainWindow(HWND hwnd, HWND tree) {
+void ApplyMainWindow(HWND hwnd, HWND tree, HWND tab, HWND panelHost) {
     ApplyWindowChrome(hwnd);
     Apply(hwnd);
     ApplyTree(tree);
+    ApplyTabControl(tab);
+    ApplyPanelHost(panelHost);
     ApplyWindowMenus(hwnd);
     RedrawMenus(hwnd);
     PaintMenuBarBand(hwnd);

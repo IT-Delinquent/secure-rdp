@@ -50,7 +50,8 @@
 - Tree view with folders and RDP sessions (name, host/IP, port default 3389)
 - Reusable credential profiles linked to sessions
 - Bulk credential assignment for multi-selected sessions and folder scopes
-- Launch sessions in fullscreen via `mstsc.exe` (separate process)
+- Embedded RDP sessions in a resizable right panel (FreeRDP) with one tab per connection
+- Optional fallback: open session in external `mstsc.exe` (`File -> Open in mstsc...`)
 - Drag-and-drop reparenting, copy/paste, duplicate
 - Import and export connections in mRemoteNG XML format (folders and RDP sessions)
 - Inline rename (F2 / slow double-click on label)
@@ -68,14 +69,15 @@
 | Persistence | **JSON** via vendored [**nlohmann/json**](https://github.com/nlohmann/json) |
 | Import / export | **MSXML 6** DOM for mRemoteNG-compatible XML |
 | Secrets | **Windows Credential Manager** (`wincred.h`) |
-| RDP launch | `mstsc.exe` + temporary `.rdp` files |
+| RDP client | **FreeRDP** (embedded tabs) + optional `mstsc.exe` fallback |
 | Icon tooling | Python + Pillow (`resources/build_icon.py`) |
 
 ## Security Model
 
 - `connections.json` and `credentials.json` under `%AppData%\TinyRdp\` hold metadata only.
 - Passwords are saved in Credential Manager targets `TinyRdp/Profile/{uuid}`.
-- On connect, credentials are mirrored to `TERMSRV/{host[:port]}` for `mstsc.exe`.
+- Embedded connect passes credentials directly to FreeRDP from Credential Manager.
+- External `mstsc.exe` connect mirrors credentials to `TERMSRV/{host[:port]}`.
 - No app-level encryption keys or reversible password blobs in project files.
 - Clipboard transfer uses `TinyRdp/NodeV1` JSON subtree format without passwords.
 
@@ -84,22 +86,38 @@
 - Windows 10 or 11 (x64)
 - Visual Studio 2022 or Build Tools with Desktop C++
 - CMake 3.20+
+- [vcpkg](https://github.com/microsoft/vcpkg) (bundled under `vcpkg/` or your own install)
 
 ## Build
 
+Install dependencies (first time only):
+
 ```powershell
 cd c:\source\tinyrdp
-cmake -B build -G "Visual Studio 17 2022" -A x64
+git clone https://github.com/microsoft/vcpkg vcpkg
+.\vcpkg\bootstrap-vcpkg.bat
+.\vcpkg\vcpkg install --triplet x64-windows-static --overlay-triplets=cmake\vcpkg-triplets
+```
+
+CMake also auto-runs `vcpkg install` from [`vcpkg.json`](vcpkg.json) when you configure with the vcpkg toolchain.
+
+Configure and build:
+
+```powershell
+cd c:\source\tinyrdp
+cmake -B build -G "Visual Studio 17 2022" -A x64 -DVCPKG_TARGET_TRIPLET=x64-windows-static
 cmake --build build --config Release
 ```
 
 Output: `build\Release\TinyRdp.exe`
 
+See [NOTICE](NOTICE) for third-party licenses (FreeRDP is Apache 2.0).
+
 ### Full path variant
 
 ```powershell
 cd c:\source\tinyrdp
-& "C:\Program Files\CMake\bin\cmake.exe" -B build -G "Visual Studio 17 2022" -A x64
+& "C:\Program Files\CMake\bin\cmake.exe" -B build -G "Visual Studio 17 2022" -A x64 -DVCPKG_TARGET_TRIPLET=x64-windows-static
 & "C:\Program Files\CMake\bin\cmake.exe" --build build --config Release
 ```
 
@@ -108,9 +126,11 @@ cd c:\source\tinyrdp
 1. Run `TinyRdp.exe`.
 2. Open `File -> Manage Credentials` to add profile username/domain/password.
 3. Create folders and sessions; link a credential in the session editor.
-4. Connect by double-click, pressing `Enter`, or using `Connect`.
-5. Use `Set Credential...` for bulk assignment on selected sessions/folders.
-6. Use `File -> Import` / `File -> Export` for mRemoteNG XML.
+4. Connect by double-click, pressing `Enter`, or using `Connect` — session opens in a tab on the right panel.
+5. Drag the splitter between tree and panel to resize. Use `File -> Disconnect Tab` or `Disconnect All` to close sessions.
+6. Use `File -> Open in mstsc...` if you need the legacy external client.
+7. Use `Set Credential...` for bulk assignment on selected sessions/folders.
+8. Use `File -> Import` / `File -> Export` for mRemoteNG XML.
 
 ## Example mRemoteNG Export XML
 
@@ -122,7 +142,8 @@ Import this file with `File -> Import...` to test your importer and use it as a 
 
 | Key | Action |
 |-----|--------|
-| Enter | Connect selected session |
+| Enter | Connect selected session (embedded tab) |
+| Ctrl+Tab | Cycle embedded session tabs |
 | Delete | Delete selected item |
 | Ctrl+C | Copy subtree |
 | Ctrl+V | Paste subtree |
@@ -140,6 +161,7 @@ All persistent app data is under `%AppData%\TinyRdp\`.
 | Credential Manager `TinyRdp/Profile/{profile-uuid}` | Profile password (DPAPI-backed) |
 | Credential Manager `TERMSRV/{host}` / `TERMSRV/{host:port}` | Mirrored credentials for `mstsc.exe` |
 | `%TEMP%\TinyRdp\{session-id}.rdp` | Temporary launch file (no password field) |
+| `%AppData%\TinyRdp\settings.json` | Theme and panel split ratio |
 | `%AppData%\TinyRdp\app.log` | Diagnostics log |
 
 ## Branding Assets

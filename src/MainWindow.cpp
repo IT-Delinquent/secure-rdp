@@ -9,6 +9,8 @@
 #include "Dialogs/FolderDialog.h"
 #include "Dialogs/FolderScopeDialog.h"
 #include "Dialogs/SessionDialog.h"
+#include "AppSettings.h"
+#include "SplitterBar.h"
 #include "ThemeSettings.h"
 #include "Logger.h"
 #include "MRemoteNgExchange.h"
@@ -27,6 +29,7 @@
 
 namespace {
 
+constexpr UINT WM_TINYRDP_DEFERRED_LAYOUT = WM_APP + 20;
 constexpr UINT_PTR kTreeInputSubclassId = 3;
 
 struct MainMenuItems {
@@ -51,6 +54,9 @@ struct MainMenuItems {
     UiTheme::MenuItemData themeSystem{};
     UiTheme::MenuItemData themeLight{};
     UiTheme::MenuItemData themeDark{};
+    UiTheme::MenuItemData disconnect{};
+    UiTheme::MenuItemData disconnectAll{};
+    UiTheme::MenuItemData openExternal{};
     UiTheme::MenuItemData fileSep1{};
     UiTheme::MenuItemData fileSep2{};
     UiTheme::MenuItemData fileSep3{};
@@ -84,6 +90,9 @@ struct MainMenuItems {
         UiTheme::MenuInitItem(themeSystem, L"&System default");
         UiTheme::MenuInitItem(themeLight, L"&Light");
         UiTheme::MenuInitItem(themeDark, L"&Dark");
+        UiTheme::MenuInitItem(disconnect, L"&Disconnect Tab");
+        UiTheme::MenuInitItem(disconnectAll, L"Disconnect A&ll");
+        UiTheme::MenuInitItem(openExternal, L"Open in &mstsc...");
         UiTheme::MenuInitSeparator(fileSep1);
         UiTheme::MenuInitSeparator(fileSep2);
         UiTheme::MenuInitSeparator(fileSep3);
@@ -144,8 +153,9 @@ bool MainWindow::RegisterClass(HINSTANCE hInstance) {
 }
 
 bool MainWindow::CreateWindowInstance(HINSTANCE hInstance) {
-    hwnd_ = CreateWindowExW(0, L"TinyRdpMainWindow", SECURE_RDP_TITLE, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
-                            CW_USEDEFAULT, 960, 640, nullptr, nullptr, hInstance, this);
+    hwnd_ = CreateWindowExW(0, L"TinyRdpMainWindow", SECURE_RDP_TITLE,
+                            WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, 960, 640,
+                            nullptr, nullptr, hInstance, this);
     return hwnd_ != nullptr;
 }
 
@@ -180,8 +190,14 @@ void MainWindow::CreateControls() {
                       reinterpret_cast<DWORD_PTR>(this));
     UiTheme::ApplyTree(tree_);
 
+    panelHost_ = CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS, 0, 0, 100, 100, hwnd_,
+                                 reinterpret_cast<HMENU>(IDC_SESSION_PANEL), hInstance_, nullptr);
+    if (!sessionManager_.Initialize(panelHost_, hInstance_)) {
+        LOG_ERROR(L"Failed to initialize session panel.");
+    }
+
     UiTheme::ThemePreference pref = UiTheme::ThemePreference::System;
-    ThemeSettingsLoad(pref);
+    AppSettings::Load(pref, panelSplitRatio_);
     UiTheme::SetPreference(pref);
     ApplyTheme();
 }
@@ -193,6 +209,9 @@ void MainWindow::CreateMenus() {
     HMENU editMenu = CreatePopupMenu();
 
     UiTheme::MenuAppend(fileMenu, IDM_CONNECT, m.connect);
+    UiTheme::MenuAppend(fileMenu, IDM_DISCONNECT, m.disconnect);
+    UiTheme::MenuAppend(fileMenu, IDM_DISCONNECT_ALL, m.disconnectAll);
+    UiTheme::MenuAppend(fileMenu, IDM_OPEN_EXTERNAL, m.openExternal);
     UiTheme::MenuAppendSeparator(fileMenu, IDM_SEP_FILE_1, m.fileSep1);
     UiTheme::MenuAppend(fileMenu, IDM_NEW_SESSION, m.newSession);
     UiTheme::MenuAppend(fileMenu, IDM_NEW_FOLDER, m.newFolder);
@@ -258,6 +277,10 @@ void MainWindow::UpdateMenuState(HMENU menu) {
 
     if (menu == fileMenu_) {
         EnableMenuItem(menu, IDM_CONNECT, isSession && !multiSelect ? enable : disable);
+        const bool hasSessions = sessionManager_.SessionCount() > 0;
+        EnableMenuItem(menu, IDM_DISCONNECT, hasSessions ? enable : disable);
+        EnableMenuItem(menu, IDM_DISCONNECT_ALL, hasSessions ? enable : disable);
+        EnableMenuItem(menu, IDM_OPEN_EXTERNAL, isSession && !multiSelect ? enable : disable);
     }
     if (menu == editMenu_) {
         const bool canEdit = hasNode && !multiSelect;
@@ -285,13 +308,86 @@ void MainWindow::FreeTreeItemData(HTREEITEM item) {
     }
 }
 
+void MainWindow::DeferredLayout() {
+    if (!hwnd_) {
+        return;
+    }
+    RECT rc{};
+    GetClientRect(hwnd_, &rc);
+    const int w = rc.right - rc.left;
+    const int h = rc.bottom - rc.top;
+    if (w > 0 && h > 0) {
+        LayoutControls(w, h);
+    }
+}
+
 void MainWindow::LayoutControls(int width, int height) {
-    const int treeX = 0;
     const int treeOverlap = UiTheme::IsDarkEffective() ? 1 : 0;
     const int treeY = UiTheme::kMainWindowTreeTopPadding - treeOverlap;
-    const int treeW = width;
     const int treeH = height - UiTheme::kMainWindowTreeTopPadding + treeOverlap;
-    SetWindowPos(tree_, nullptr, treeX, treeY, treeW > 0 ? treeW : 0, treeH > 0 ? treeH : 0, SWP_NOZORDER);
+
+    const int splitX = GetSplitX(width);
+    const int treeW = splitX;
+    const int panelX = splitX + SplitterBar::kWidth;
+    const int panelW = width > panelX ? width - panelX : 0;
+
+    UINT treeFlags = SWP_NOZORDER | SWP_NOACTIVATE;
+    if (splitterDragging_) {
+        treeFlags |= SWP_NOCOPYBITS;
+    }
+    SetWindowPos(tree_, nullptr, 0, treeY, treeW > 0 ? treeW : 0, treeH > 0 ? treeH : 0, treeFlags);
+    if (panelHost_) {
+        UINT panelFlags = SWP_NOZORDER | SWP_NOACTIVATE;
+        if (splitterDragging_) {
+            panelFlags |= SWP_NOCOPYBITS;
+        }
+        SetWindowPos(panelHost_, nullptr, panelX, treeY, panelW > 0 ? panelW : 0, treeH > 0 ? treeH : 0, panelFlags);
+        sessionManager_.Layout(0, 0, panelW, treeH);
+    }
+}
+
+int MainWindow::GetSplitX(int clientWidth) const {
+    if (splitDragX_ >= 0) {
+        return SplitterBar::ClampSplitX(splitDragX_, clientWidth);
+    }
+    return SplitterBar::ClampSplitX(static_cast<int>(clientWidth * panelSplitRatio_), clientWidth);
+}
+
+bool MainWindow::IsSplitterHit(int x, int y, int clientHeight) const {
+    RECT rc{};
+    GetClientRect(hwnd_, &rc);
+    return SplitterBar::HitTest(GetSplitX(rc.right - rc.left), x, y, clientHeight,
+                                UiTheme::kMainWindowTreeTopPadding);
+}
+
+void MainWindow::BeginSplitterDrag(int x) {
+    splitterDragging_ = true;
+    splitDragX_ = x;
+    SetCapture(hwnd_);
+}
+
+void MainWindow::UpdateSplitterDrag(int x, int clientWidth) {
+    splitDragX_ = SplitterBar::ClampSplitX(x, clientWidth);
+    RECT rc{};
+    GetClientRect(hwnd_, &rc);
+    LayoutControls(rc.right - rc.left, rc.bottom - rc.top);
+}
+
+void MainWindow::EndSplitterDrag(int clientWidth) {
+    if (!splitterDragging_) {
+        return;
+    }
+    splitterDragging_ = false;
+    ReleaseCapture();
+    if (clientWidth > 0) {
+        panelSplitRatio_ = static_cast<double>(GetSplitX(clientWidth)) / static_cast<double>(clientWidth);
+    }
+    splitDragX_ = -1;
+    SaveAppSettings();
+}
+
+void MainWindow::SaveAppSettings() {
+    AppSettings::Save(UiTheme::GetPreference(), panelSplitRatio_);
 }
 
 HTREEITEM MainWindow::InsertTreeItem(const TreeNode& node, HTREEITEM parent) {
@@ -604,12 +700,13 @@ bool MainWindow::HandleAltClickRange(HTREEITEM hit) {
 }
 
 void MainWindow::ApplyTheme() {
-    UiTheme::ApplyMainWindow(hwnd_, tree_);
+    UiTheme::ApplyMainWindow(hwnd_, tree_, sessionManager_.TabHwnd(), panelHost_);
+    sessionManager_.ApplyTheme();
 }
 
 void MainWindow::SetThemePreference(UiTheme::ThemePreference preference) {
     UiTheme::SetPreference(preference);
-    ThemeSettingsSave(preference);
+    SaveAppSettings();
     ApplyTheme();
     UpdateThemeMenuChecks();
 }
@@ -749,7 +846,7 @@ void MainWindow::ConnectSelected() {
         return;
     }
     std::wstring error;
-    if (!launcher_->Connect(*node, error)) {
+    if (!sessionManager_.OpenOrFocus(*node, Model(), error)) {
         MessageBoxW(hwnd_, error.c_str(), L"Connect failed", MB_ICONERROR);
         return;
     }
@@ -1038,6 +1135,12 @@ void MainWindow::ShowContextMenu(int screenX, int screenY) {
 
     if (isSession) {
         addItem(IDM_CONNECT, L"Connect");
+        addItem(IDM_OPEN_EXTERNAL, L"Open in mstsc...");
+        addSep();
+    }
+    if (sessionManager_.SessionCount() > 0) {
+        addItem(IDM_DISCONNECT, L"Disconnect Tab");
+        addItem(IDM_DISCONNECT_ALL, L"Disconnect All");
         addSep();
     }
     if (canBulkCredential) {
@@ -1077,6 +1180,22 @@ void MainWindow::OnCommand(int id) {
         case IDM_CONNECT:
             ConnectSelected();
             break;
+        case IDM_DISCONNECT:
+            sessionManager_.CloseActiveTab();
+            break;
+        case IDM_DISCONNECT_ALL:
+            sessionManager_.CloseAll();
+            break;
+        case IDM_OPEN_EXTERNAL: {
+            TreeNode* node = GetSelectedNode();
+            if (node && node->IsSession()) {
+                std::wstring error;
+                if (!launcher_->Connect(*node, error)) {
+                    MessageBoxW(hwnd_, error.c_str(), L"Connect failed", MB_ICONERROR);
+                }
+            }
+            break;
+        }
         case IDM_NEW_SESSION:
             NewSession();
             break;
@@ -1141,6 +1260,9 @@ void MainWindow::OnCommand(int id) {
 }
 
 void MainWindow::OnNotify(LPNMHDR hdr) {
+    if (sessionManager_.HandleNotify(hdr)) {
+        return;
+    }
     if (hdr->hwndFrom != tree_) {
         return;
     }
@@ -1204,22 +1326,46 @@ LRESULT CALLBACK MainWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
             self->CreateControls();
             return 0;
         case WM_SIZE: {
-            const int w = LOWORD(lParam);
-            const int h = HIWORD(lParam);
-            self->LayoutControls(w, h);
+            if (wParam != SIZE_MINIMIZED) {
+                const int w = LOWORD(lParam);
+                const int h = HIWORD(lParam);
+                if (w > 0 && h > 0) {
+                    self->LayoutControls(w, h);
+                }
+                PostMessageW(hwnd, WM_TINYRDP_DEFERRED_LAYOUT, 0, 0);
+            }
             if (UiTheme::IsDarkEffective()) {
                 UiTheme::PaintMenuBarBand(hwnd);
             }
             return 0;
         }
+        case WM_TINYRDP_DEFERRED_LAYOUT:
+            self->DeferredLayout();
+            return 0;
+        case WM_EXITSIZEMOVE:
+            self->DeferredLayout();
+            return 0;
         case WM_GETMINMAXINFO: {
             auto* mmi = reinterpret_cast<MINMAXINFO*>(lParam);
             if (mmi) {
-                mmi->ptMinTrackSize.x = 200;
+                mmi->ptMinTrackSize.x = SplitterBar::kMinTreeWidth + SplitterBar::kWidth + SplitterBar::kMinPanelWidth;
                 mmi->ptMinTrackSize.y = 200;
             }
             return 0;
         }
+        case WM_SETCURSOR:
+            if (LOWORD(lParam) == HTCLIENT) {
+                POINT pt{};
+                GetCursorPos(&pt);
+                ScreenToClient(hwnd, &pt);
+                RECT rc{};
+                GetClientRect(hwnd, &rc);
+                if (self->IsSplitterHit(pt.x, pt.y, rc.bottom - rc.top)) {
+                    SetCursor(LoadCursorW(nullptr, IDC_SIZEWE));
+                    return TRUE;
+                }
+            }
+            break;
         case WM_COMMAND:
             if (HIWORD(wParam) == 0) {
                 self->OnCommand(LOWORD(wParam));
@@ -1236,6 +1382,9 @@ LRESULT CALLBACK MainWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
                 treePad.bottom = rc.bottom;
             }
             FillRect(hdc, &treePad, UiTheme::InputBackgroundBrush());
+            const int splitX = self->GetSplitX(rc.right - rc.left);
+            RECT splitter{splitX, treePad.bottom, splitX + SplitterBar::kWidth, rc.bottom};
+            FillRect(hdc, &splitter, UiTheme::InputBackgroundBrush());
             return 1;
         }
         case WM_PAINT: {
@@ -1295,20 +1444,6 @@ LRESULT CALLBACK MainWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
             self->ShowContextMenu(pt.x, pt.y);
             return 0;
         }
-        case WM_LBUTTONUP:
-            if (self->dragDrop_.IsDragging()) {
-                POINT pt{static_cast<short>(LOWORD(lParam)), static_cast<short>(HIWORD(lParam))};
-                MapWindowPoints(self->hwnd_, self->tree_, &pt, 1);
-                self->dragDrop_.OnLButtonUp(self->tree_, pt.x, pt.y);
-            }
-            return 0;
-        case WM_MOUSEMOVE:
-            if (self->dragDrop_.IsDragging()) {
-                POINT pt{static_cast<short>(LOWORD(lParam)), static_cast<short>(HIWORD(lParam))};
-                MapWindowPoints(self->hwnd_, self->tree_, &pt, 1);
-                self->dragDrop_.OnMouseMove(self->tree_, pt.x, pt.y);
-            }
-            return 0;
         case WM_MEASUREITEM:
             if (UiTheme::MenuOnMeasureItem(lParam)) {
                 return TRUE;
@@ -1330,13 +1465,69 @@ LRESULT CALLBACK MainWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
                 self->ConnectSelected();
             } else if (wParam == VK_DELETE) {
                 self->DeleteSelected();
+            } else if (GetKeyState(VK_CONTROL) < 0 && wParam == VK_TAB) {
+                // Ctrl+Tab cycles embedded session tabs.
+                HWND tab = self->sessionManager_.TabHwnd();
+                if (tab) {
+                    const int count = TabCtrl_GetItemCount(tab);
+                    if (count > 0) {
+                        int sel = TabCtrl_GetCurSel(tab);
+                        sel = (sel + 1) % count;
+                        TabCtrl_SetCurSel(tab, sel);
+                        NMHDR nm{};
+                        nm.hwndFrom = tab;
+                        nm.idFrom = IDC_SESSION_TABS;
+                        nm.code = TCN_SELCHANGE;
+                        self->sessionManager_.HandleNotify(&nm);
+                    }
+                }
+            }
+            return 0;
+        case WM_LBUTTONDOWN: {
+            const int x = GET_X_LPARAM(lParam);
+            const int y = GET_Y_LPARAM(lParam);
+            RECT rc{};
+            GetClientRect(hwnd, &rc);
+            if (self->IsSplitterHit(x, y, rc.bottom - rc.top)) {
+                self->BeginSplitterDrag(x);
+                return 0;
+            }
+            break;
+        }
+        case WM_MOUSEMOVE:
+            if (self->splitterDragging_) {
+                RECT rc{};
+                GetClientRect(hwnd, &rc);
+                self->UpdateSplitterDrag(GET_X_LPARAM(lParam), rc.right - rc.left);
+                return 0;
+            }
+            if (self->dragDrop_.IsDragging()) {
+                POINT pt{static_cast<short>(LOWORD(lParam)), static_cast<short>(HIWORD(lParam))};
+                MapWindowPoints(self->hwnd_, self->tree_, &pt, 1);
+                self->dragDrop_.OnMouseMove(self->tree_, pt.x, pt.y);
+            }
+            return 0;
+        case WM_LBUTTONUP:
+            if (self->splitterDragging_) {
+                RECT rc{};
+                GetClientRect(hwnd, &rc);
+                self->EndSplitterDrag(rc.right - rc.left);
+                return 0;
+            }
+            if (self->dragDrop_.IsDragging()) {
+                POINT pt{static_cast<short>(LOWORD(lParam)), static_cast<short>(HIWORD(lParam))};
+                MapWindowPoints(self->hwnd_, self->tree_, &pt, 1);
+                self->dragDrop_.OnLButtonUp(self->tree_, pt.x, pt.y);
             }
             return 0;
         case WM_CLOSE:
+            self->SaveAppSettings();
+            self->sessionManager_.CloseAll();
             self->Save();
             DestroyWindow(hwnd);
             return 0;
         case WM_DESTROY:
+            self->sessionManager_.Shutdown();
             if (self->imageList_) {
                 ImageList_Destroy(self->imageList_);
             }
